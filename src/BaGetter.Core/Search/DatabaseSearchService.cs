@@ -69,7 +69,10 @@ public class DatabaseSearchService : ISearchService
             request.PackageType,
             frameworks);
 
-        var results = await search.ToListAsync(cancellationToken);
+        var results = await search
+            .OrderBy(p => p.Id)
+            .ToListAsync(cancellationToken);
+
         var groupedResults = results
             .GroupBy(p => p.Id, StringComparer.OrdinalIgnoreCase)
             .Select(group => new PackageRegistration(group.Key, group.ToList()))
