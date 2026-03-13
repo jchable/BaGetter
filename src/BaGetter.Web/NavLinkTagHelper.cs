@@ -12,7 +12,8 @@ public class NavLinkTagHelper : TagHelper
 
     public NavLinkTagHelper(IHttpContextAccessor accessor)
     {
-        _accessor = accessor ?? throw new ArgumentNullException(nameof(accessor));
+        ArgumentNullException.ThrowIfNull(accessor);
+        _accessor = accessor;
     }
 
     [HtmlAttributeName("asp-page")]

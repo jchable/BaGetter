@@ -18,7 +18,8 @@ public class BindOptions<TOptions> : IConfigureOptions<TOptions> where TOptions 
     /// <param name="config">The configs to automatically bind to options.</param>
     public BindOptions(IConfiguration config)
     {
-        _config = config ?? throw new ArgumentNullException(nameof(config));
+        ArgumentNullException.ThrowIfNull(config);
+        _config = config;
     }
 
     public void Configure(TOptions options) => _config.Bind(options);

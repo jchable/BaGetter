@@ -26,11 +26,16 @@ public class SymbolController : Controller
         IOptionsSnapshot<BaGetterOptions> options,
         ILogger<SymbolController> logger)
     {
-        _authentication = authentication ?? throw new ArgumentNullException(nameof(authentication));
-        _indexer = indexer ?? throw new ArgumentNullException(nameof(indexer));
-        _storage = storage ?? throw new ArgumentNullException(nameof(storage));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(authentication);
+        ArgumentNullException.ThrowIfNull(indexer);
+        ArgumentNullException.ThrowIfNull(storage);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(logger);
+        _authentication = authentication;
+        _indexer = indexer;
+        _storage = storage;
+        _options = options;
+        _logger = logger;
     }
 
     // See: https://docs.microsoft.com/en-us/nuget/api/package-publish-resource#push-a-package

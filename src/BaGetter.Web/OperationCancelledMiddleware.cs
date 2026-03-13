@@ -17,8 +17,10 @@ public class OperationCancelledMiddleware
 
     public OperationCancelledMiddleware(RequestDelegate next, ILogger<OperationCancelledMiddleware> logger)
     {
-        _next = next ?? throw new ArgumentNullException(nameof(next));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(next);
+        ArgumentNullException.ThrowIfNull(logger);
+        _next = next;
+        _logger = logger;
     }
 
     public async Task Invoke(HttpContext context)

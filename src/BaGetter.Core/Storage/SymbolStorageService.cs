@@ -15,7 +15,8 @@ public class SymbolStorageService : ISymbolStorageService
 
     public SymbolStorageService(IStorageService storage)
     {
-        _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+        ArgumentNullException.ThrowIfNull(storage);
+        _storage = storage;
     }
 
     public async Task SavePortablePdbContentAsync(

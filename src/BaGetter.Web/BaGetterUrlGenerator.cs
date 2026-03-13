@@ -14,8 +14,10 @@ public class BaGetterUrlGenerator : IUrlGenerator
 
     public BaGetterUrlGenerator(IHttpContextAccessor httpContextAccessor, LinkGenerator linkGenerator)
     {
-        _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
-        _linkGenerator = linkGenerator ?? throw new ArgumentNullException(nameof(linkGenerator));
+        ArgumentNullException.ThrowIfNull(httpContextAccessor);
+        ArgumentNullException.ThrowIfNull(linkGenerator);
+        _httpContextAccessor = httpContextAccessor;
+        _linkGenerator = linkGenerator;
     }
 
     public string GetServiceIndexUrl()

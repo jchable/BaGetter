@@ -13,7 +13,8 @@ public class ConfigureRazorRuntimeCompilation : IConfigureOptions<MvcRazorRuntim
 
     public ConfigureRazorRuntimeCompilation(IHostEnvironment env)
     {
-        _env = env ?? throw new ArgumentNullException(nameof(env));
+        ArgumentNullException.ThrowIfNull(env);
+        _env = env;
     }
 
     public void Configure(MvcRazorRuntimeCompilationOptions options)

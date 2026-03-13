@@ -33,9 +33,12 @@ public class SymbolIndexingService : ISymbolIndexingService
         ISymbolStorageService storage,
         ILogger<SymbolIndexingService> logger)
     {
-        _packages = packages ?? throw new ArgumentNullException(nameof(packages));
-        _storage = storage ?? throw new ArgumentNullException(nameof(storage));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(packages);
+        ArgumentNullException.ThrowIfNull(storage);
+        ArgumentNullException.ThrowIfNull(logger);
+        _packages = packages;
+        _storage = storage;
+        _logger = logger;
     }
     // could be replaced with try catch open portable pdb... 
     private static bool IsPortablePdb(Stream pdbStream)

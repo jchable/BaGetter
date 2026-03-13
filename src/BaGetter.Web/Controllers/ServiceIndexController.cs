@@ -20,7 +20,8 @@ public class ServiceIndexController : Controller
 
     public ServiceIndexController(IServiceIndexService serviceIndex)
     {
-        _serviceIndex = serviceIndex ?? throw new ArgumentNullException(nameof(serviceIndex));
+        ArgumentNullException.ThrowIfNull(serviceIndex);
+        _serviceIndex = serviceIndex;
     }
 
     // GET v3/index

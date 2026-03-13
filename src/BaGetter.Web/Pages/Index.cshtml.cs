@@ -16,7 +16,8 @@ public class IndexModel : PageModel
 
     public IndexModel(ISearchService search)
     {
-        _search = search ?? throw new ArgumentNullException(nameof(search));
+        ArgumentNullException.ThrowIfNull(search);
+        _search = search;
     }
 
     public const int ResultsPerPage = 20;

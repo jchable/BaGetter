@@ -16,7 +16,8 @@ public class SearchController : Controller
 
     public SearchController(ISearchService searchService)
     {
-        _searchService = searchService ?? throw new ArgumentNullException(nameof(searchService));
+        ArgumentNullException.ThrowIfNull(searchService);
+        _searchService = searchService;
     }
 
     public async Task<ActionResult<SearchResponse>> SearchAsync(

@@ -33,8 +33,10 @@ public class StoragePackageDeprecationService : IPackageDeprecationService
 
     public StoragePackageDeprecationService(IStorageService storage, ILogger<StoragePackageDeprecationService> logger)
     {
-        _storage = storage ?? throw new ArgumentNullException(nameof(storage));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(storage);
+        ArgumentNullException.ThrowIfNull(logger);
+        _storage = storage;
+        _logger = logger;
     }
 
     public async Task<bool> DeprecateAsync(string id, NuGetVersion version, PackageDeprecationInfo deprecation, CancellationToken cancellationToken)

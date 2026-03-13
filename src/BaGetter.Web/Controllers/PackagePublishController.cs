@@ -30,13 +30,20 @@ public class PackagePublishController : Controller
         IOptionsSnapshot<BaGetterOptions> options,
         ILogger<PackagePublishController> logger)
     {
-        _authentication = authentication ?? throw new ArgumentNullException(nameof(authentication));
-        _indexer = indexer ?? throw new ArgumentNullException(nameof(indexer));
-        _packages = packages ?? throw new ArgumentNullException(nameof(packages));
-        _deleteService = deletionService ?? throw new ArgumentNullException(nameof(deletionService));
-        _deprecations = deprecations ?? throw new ArgumentNullException(nameof(deprecations));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(authentication);
+        ArgumentNullException.ThrowIfNull(indexer);
+        ArgumentNullException.ThrowIfNull(packages);
+        ArgumentNullException.ThrowIfNull(deletionService);
+        ArgumentNullException.ThrowIfNull(deprecations);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(logger);
+        _authentication = authentication;
+        _indexer = indexer;
+        _packages = packages;
+        _deleteService = deletionService;
+        _deprecations = deprecations;
+        _options = options;
+        _logger = logger;
     }
 
     // See: https://docs.microsoft.com/en-us/nuget/api/package-publish-resource#push-a-package

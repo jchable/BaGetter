@@ -23,11 +23,16 @@ public class PackageService : IPackageService
         IPackageDeprecationService deprecations,
         ILogger<PackageService> logger)
     {
-        _db = db ?? throw new ArgumentNullException(nameof(db));
-        _upstream = upstream ?? throw new ArgumentNullException(nameof(upstream));
-        _indexer = indexer ?? throw new ArgumentNullException(nameof(indexer));
-        _deprecations = deprecations ?? throw new ArgumentNullException(nameof(deprecations));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(upstream);
+        ArgumentNullException.ThrowIfNull(indexer);
+        ArgumentNullException.ThrowIfNull(deprecations);
+        ArgumentNullException.ThrowIfNull(logger);
+        _db = db;
+        _upstream = upstream;
+        _indexer = indexer;
+        _deprecations = deprecations;
+        _logger = logger;
     }
 
     public async Task<IReadOnlyList<NuGetVersion>> FindPackageVersionsAsync(

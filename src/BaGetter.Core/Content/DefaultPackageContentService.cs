@@ -20,8 +20,10 @@ public class DefaultPackageContentService : IPackageContentService
         IPackageService packages,
         IPackageStorageService storage)
     {
-        _packages = packages ?? throw new ArgumentNullException(nameof(packages));
-        _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+        ArgumentNullException.ThrowIfNull(packages);
+        ArgumentNullException.ThrowIfNull(storage);
+        _packages = packages;
+        _storage = storage;
     }
 
     public async Task<PackageVersionsResponse> GetPackageVersionsOrNullAsync(

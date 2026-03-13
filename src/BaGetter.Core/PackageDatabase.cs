@@ -14,7 +14,8 @@ public class PackageDatabase : IPackageDatabase
 
     public PackageDatabase(IContext context)
     {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
+        ArgumentNullException.ThrowIfNull(context);
+        _context = context;
     }
 
     public async Task<PackageAddResult> AddAsync(Package package, CancellationToken cancellationToken)

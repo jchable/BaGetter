@@ -12,7 +12,8 @@ public class BaGetterServiceIndex : IServiceIndexService
 
     public BaGetterServiceIndex(IUrlGenerator url)
     {
-        _url = url ?? throw new ArgumentNullException(nameof(url));
+        ArgumentNullException.ThrowIfNull(url);
+        _url = url;
     }
 
     private static IEnumerable<ServiceIndexItem> BuildResource(string name, string url, params string[] versions)

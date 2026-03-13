@@ -22,7 +22,8 @@ public class PackageMetadataController : Controller
 
     public PackageMetadataController(IPackageMetadataService metadata)
     {
-        _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
+        ArgumentNullException.ThrowIfNull(metadata);
+        _metadata = metadata;
     }
 
     // GET v3/registration/{id}.json

@@ -41,7 +41,8 @@ public class V2UpstreamClient : IUpstreamClient, IDisposable
             throw new ArgumentException("No mirror package source has been set.");
         }
 
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+        _logger = logger;
 
         _ngLogger = NullLogger.Instance;
         _cache = new SourceCacheContext();

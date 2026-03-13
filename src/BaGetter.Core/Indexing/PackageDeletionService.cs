@@ -24,11 +24,15 @@ public class PackageDeletionService : IPackageDeletionService
         IOptionsSnapshot<BaGetterOptions> options,
         ILogger<PackageDeletionService> logger)
     {
-        _packages = packages ?? throw new ArgumentNullException(nameof(packages));
-        _storage = storage ?? throw new ArgumentNullException(nameof(storage));
-        _deprecations = deprecations ?? throw new ArgumentNullException(nameof(deprecations));
+        ArgumentNullException.ThrowIfNull(packages);
+        ArgumentNullException.ThrowIfNull(storage);
+        ArgumentNullException.ThrowIfNull(deprecations);
+        ArgumentNullException.ThrowIfNull(logger);
+        _packages = packages;
+        _storage = storage;
+        _deprecations = deprecations;
         _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger = logger;
     }
 
     public async Task<bool> TryDeletePackageAsync(string id, NuGetVersion version, CancellationToken cancellationToken)

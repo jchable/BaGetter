@@ -19,10 +19,11 @@ public class S3StorageService : IStorageService
     public S3StorageService(IOptionsSnapshot<S3StorageOptions> options, AmazonS3Client client)
     {
         ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(client);
 
         _bucket = options.Value.Bucket;
         _prefix = options.Value.Prefix;
-        _client = client ?? throw new ArgumentNullException(nameof(client));
+        _client = client;
 
         if (!string.IsNullOrEmpty(_prefix) && !_prefix.EndsWith(Separator))
             _prefix += Separator;

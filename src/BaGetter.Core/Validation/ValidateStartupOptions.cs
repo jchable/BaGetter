@@ -26,13 +26,20 @@ public class ValidateStartupOptions
         IOptions<StatisticsOptions> statistics,
         ILogger<ValidateStartupOptions> logger)
     {
-        _root = root ?? throw new ArgumentNullException(nameof(root));
-        _database = database ?? throw new ArgumentNullException(nameof(database));
-        _storage = storage ?? throw new ArgumentNullException(nameof(storage));
-        _mirror = mirror ?? throw new ArgumentNullException(nameof(mirror));
-        _healthCheck = healthCheck ?? throw new ArgumentNullException(nameof(healthCheck));
-        _statistics = statistics ?? throw new ArgumentNullException(nameof(statistics));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(root);
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(storage);
+        ArgumentNullException.ThrowIfNull(mirror);
+        ArgumentNullException.ThrowIfNull(healthCheck);
+        ArgumentNullException.ThrowIfNull(statistics);
+        ArgumentNullException.ThrowIfNull(logger);
+        _root = root;
+        _database = database;
+        _storage = storage;
+        _mirror = mirror;
+        _healthCheck = healthCheck;
+        _statistics = statistics;
+        _logger = logger;
     }
 
     public bool Validate()

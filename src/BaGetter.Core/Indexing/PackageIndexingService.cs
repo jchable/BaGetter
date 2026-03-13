@@ -29,14 +29,22 @@ public class PackageIndexingService : IPackageIndexingService
         IOptionsSnapshot<RetentionOptions> retentionOptions,
         ILogger<PackageIndexingService> logger)
     {
-        _packages = packages ?? throw new ArgumentNullException(nameof(packages));
-        _storage = storage ?? throw new ArgumentNullException(nameof(storage));
-        _search = search ?? throw new ArgumentNullException(nameof(search));
-        _time = time ?? throw new ArgumentNullException(nameof(time));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _retentionOptions = retentionOptions ?? throw new ArgumentNullException(nameof(retentionOptions));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _packageDeletionService = packageDeletionService ?? throw new ArgumentNullException(nameof(packageDeletionService));
+        ArgumentNullException.ThrowIfNull(packages);
+        ArgumentNullException.ThrowIfNull(storage);
+        ArgumentNullException.ThrowIfNull(search);
+        ArgumentNullException.ThrowIfNull(time);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(retentionOptions);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(packageDeletionService);
+        _packages = packages;
+        _storage = storage;
+        _search = search;
+        _time = time;
+        _options = options;
+        _retentionOptions = retentionOptions;
+        _logger = logger;
+        _packageDeletionService = packageDeletionService;
 #pragma warning disable CS0618 // Type or member is obsolete
         if (_options.Value.MaxVersionsPerPackage > 0)
         {

@@ -44,10 +44,14 @@ public class PackageModel : PageModel
         ISearchService search,
         IUrlGenerator url)
     {
-        _packages = packages ?? throw new ArgumentNullException(nameof(packages));
-        _content = content ?? throw new ArgumentNullException(nameof(content));
-        _search = search ?? throw new ArgumentNullException(nameof(search));
-        _url = url ?? throw new ArgumentNullException(nameof(url));
+        ArgumentNullException.ThrowIfNull(packages);
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentNullException.ThrowIfNull(search);
+        ArgumentNullException.ThrowIfNull(url);
+        _packages = packages;
+        _content = content;
+        _search = search;
+        _url = url;
     }
 
     public bool Found { get; private set; }

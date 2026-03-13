@@ -36,7 +36,8 @@ internal class DelegateProvider<TService> : IProvider<TService>
     /// null if the provider is not currently active due to the app's configuration.</param>
     public DelegateProvider(Func<IServiceProvider, IConfiguration, TService> func)
     {
-        _func = func ?? throw new ArgumentNullException(nameof(func));
+        ArgumentNullException.ThrowIfNull(func);
+        _func = func;
     }
 
     public TService GetOrNull(IServiceProvider provider, IConfiguration configuration)
