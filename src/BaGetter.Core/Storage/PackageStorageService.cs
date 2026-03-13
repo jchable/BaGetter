@@ -24,8 +24,10 @@ public class PackageStorageService : IPackageStorageService
         IStorageService storage,
         ILogger<PackageStorageService> logger)
     {
-        _storage = storage ?? throw new ArgumentNullException(nameof(storage));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(storage);
+        ArgumentNullException.ThrowIfNull(logger);
+        _storage = storage;
+        _logger = logger;
     }
 
     public async Task SavePackageContentAsync(
@@ -200,17 +202,17 @@ public class PackageStorageService : IPackageStorageService
         {
             return await _storage.GetAsync(path, cancellationToken);
         }
-        catch (DirectoryNotFoundException)
+        catch (DirectoryNotFoundException e)
         {
             // The "packages" prefix was lowercased, which was a breaking change
             // on filesystems that are case sensitive. Handle this case to help
             // users migrate to the latest version of BaGetter.
             // See https://github.com/loic-sharma/BaGet/issues/298
-            _logger.LogError(
+            throw new DirectoryNotFoundException(
                 $"Unable to find the '{PackagesPathPrefix}' folder. " +
                 "If you've recently upgraded BaGet, please make sure this folder starts with a lowercased letter. " +
-                "For more information, please see https://github.com/loic-sharma/BaGet/issues/298");
-            throw;
+                "For more information, please see https://github.com/loic-sharma/BaGet/issues/298",
+                e);
         }
     }
 
