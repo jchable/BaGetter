@@ -228,8 +228,8 @@ public class PackageModel : PageModel
             return HtmlString.Empty;
         }
 
-        var releseNotesHtml = Markdown.ToHtml(Package.ReleaseNotes, MarkdownPipeline);
-        var sanitizedHtml = HtmlSanitizer.Sanitize(releseNotesHtml);
+        var releaseNotesHtml = Markdown.ToHtml(Package.ReleaseNotes, MarkdownPipeline);
+        var sanitizedHtml = HtmlSanitizer.Sanitize(releaseNotesHtml);
         return new HtmlString(sanitizedHtml);
     }
 
