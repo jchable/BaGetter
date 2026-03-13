@@ -2,7 +2,6 @@ using System;
 using BaGetter.Authentication;
 using BaGetter.Core;
 using BaGetter.Core.Extensions;
-using BaGetter.Tencent;
 using BaGetter.Web;
 using BaGetter.Web.Authentication;
 using Microsoft.AspNetCore.Authentication;
@@ -25,7 +24,8 @@ public class Startup
 
     public Startup(IConfiguration configuration)
     {
-        Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        ArgumentNullException.ThrowIfNull(configuration);
+        Configuration = configuration;
     }
 
     public void ConfigureServices(IServiceCollection services)
@@ -59,22 +59,12 @@ public class Startup
         app.AddNugetBasicHttpAuthorization();
 
         // Add database providers.
-        app.AddAzureTableDatabase();
-        app.AddMySqlDatabase();
         app.AddPostgreSqlDatabase();
         app.AddSqliteDatabase();
-        app.AddSqlServerDatabase();
 
         // Add storage providers.
         app.AddFileStorage();
-        app.AddAliyunOssStorage();
         app.AddAwsS3Storage();
-        app.AddAzureBlobStorage();
-        app.AddGoogleCloudStorage();
-        app.AddTencentOssStorage();
-
-        // Add search providers.
-        //app.AddAzureSearch();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -14,16 +14,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BaGetter.Aliyun\BaGetter.Aliyun.csproj" />
     <ProjectReference Include="..\BaGetter.Aws\BaGetter.Aws.csproj" />
-    <ProjectReference Include="..\BaGetter.Azure\BaGetter.Azure.csproj" />
     <ProjectReference Include="..\BaGetter.Core\BaGetter.Core.csproj" />
-    <ProjectReference Include="..\BaGetter.Database.MySql\BaGetter.Database.MySql.csproj" />
     <ProjectReference Include="..\BaGetter.Database.PostgreSql\BaGetter.Database.PostgreSql.csproj" />
     <ProjectReference Include="..\BaGetter.Database.Sqlite\BaGetter.Database.Sqlite.csproj" />
-    <ProjectReference Include="..\BaGetter.Database.SqlServer\BaGetter.Database.SqlServer.csproj" />
-    <ProjectReference Include="..\BaGetter.Gcp\BaGetter.Gcp.csproj" />
-    <ProjectReference Include="..\BaGetter.Tencent\BaGetter.Tencent.csproj" />
     <ProjectReference Include="..\BaGetter.Web\BaGetter.Web.csproj" />
     <ProjectReference Include="..\BaGetter.Protocol\BaGetter.Protocol.csproj" />
   </ItemGroup>
