@@ -48,5 +48,6 @@
     <PackageVersion Include="Google.Cloud.Storage.V1" Version="4.11.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.10" />
     <PackageVersion Include="Tencent.QCloud.Cos.Sdk" Version="5.4.44" />
+    <PackageVersion Include="SharpPdb" Version="1.0.4" />
   </ItemGroup>
 </Project>
