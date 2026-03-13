@@ -1,0 +1,17 @@
+services:
+  bagetter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - ApiKey=MySecretApiKey123!
+      - Authentication__Credentials__0__Username=admin
+      - Authentication__Credentials__0__Password=P@ssw0rd!
+    volumes:
+      - bagetter-data:/data
+
+volumes:
+  bagetter-data:
