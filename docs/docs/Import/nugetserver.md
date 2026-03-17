@@ -17,7 +17,7 @@ $source = "<NuGet.Server package source>"
 $destination = "<BaGetter package source>"
 ```
 
-If you've [configured BaGetter to require an API Key](https://bagetter.com/docs/configuration/#requiring-an-api-key), set it using [the `setapikey` command](https://docs.microsoft.com/en-us/nuget/reference/cli-reference/cli-ref-setapikey):
+If you've [configured BaGetter to require an API Key](../configuration.md#require-an-api-key), set it using [the `setapikey` command](https://docs.microsoft.com/en-us/nuget/reference/cli-reference/cli-ref-setapikey):
 
 ```powershell
 & nuget.exe setapikey "MY-API-KEY" -Source $destination

@@ -415,6 +415,88 @@ If you set `ListConfiguredServices` to `false` the currently used services for d
 }
 ```
 
+:::warning
+
+For production deployments it is recommended to set both `EnableStatisticsPage` and `ListConfiguredServices` to `false`. The statistics page has no authentication guard and `ListConfiguredServices` exposes your infrastructure stack (database engine, storage backend) publicly.
+
+:::
+
+## Rate Limiting
+
+BaGetter applies built-in rate limiting on write and search endpoints:
+
+| Endpoint | Policy | Default limit |
+| --- | --- | --- |
+| `PUT api/v2/package` (upload) | Sliding window per user | 5 requests / 10 minutes |
+| `GET v3/search` | Fixed window per IP | 200 requests / minute |
+| `GET v3/autocomplete` | Fixed window per IP | 200 requests / minute |
+
+Requests that exceed the limit receive a `429 Too Many Requests` response.
+
+These limits are intentionally generous for legitimate use (CI pipelines typically push once per build). The limits protect against accidental infinite loops and scripted abuse.
+
+## Structured Logging
+
+BaGetter uses [Serilog](https://serilog.net/) with compact JSON output. Each HTTP request is logged as a single structured line including the user name, remote IP, path, status code, and elapsed time.
+
+Log levels are configured under the `Serilog` key in `appsettings.json`:
+
+```json
+{
+    ...
+
+    "Serilog": {
+        "MinimumLevel": {
+            "Default": "Information",
+            "Override": {
+                "Microsoft": "Warning",
+                "Microsoft.Hosting.Lifetime": "Information",
+                "Microsoft.EntityFrameworkCore": "Warning",
+                "System": "Warning"
+            }
+        }
+    },
+
+    ...
+}
+```
+
+Health check requests to `/health` are suppressed to `Debug` level to avoid noise.
+
+## Trusted Proxies
+
+When running behind a reverse proxy (Nginx, Traefik, etc.), configure the proxy's IP address so that `X-Forwarded-For` and `X-Forwarded-Proto` headers are trusted:
+
+```json
+{
+    ...
+
+    "TrustedProxies": ["192.168.1.10"],
+
+    ...
+}
+```
+
+Or via environment variable: `TrustedProxies__0=192.168.1.10`
+
+If `TrustedProxies` is not configured, BaGetter defaults to trusting loopback only (safe). Without this setting, `X-Forwarded-*` headers from arbitrary sources are ignored rather than trusted blindly.
+
+## CORS
+
+Cross-Origin Resource Sharing (CORS) controls which browser origins may make requests to BaGetter. NuGet CLI and `dotnet restore` are not browser requests and are unaffected by this setting.
+
+```json
+{
+    ...
+
+    "AllowedCorsOrigins": ["https://nuget.yourcompany.internal"],
+
+    ...
+}
+```
+
+If `AllowedCorsOrigins` is not configured, CORS is disabled entirely (no cross-origin browser requests are permitted). This is the recommended default for private enterprise feeds.
+
 
 
 ## Load secrets from files

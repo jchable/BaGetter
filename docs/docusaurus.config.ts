@@ -8,14 +8,13 @@ const config: Config = {
   favicon: 'img/favicon.ico',
 
   // Set the production url of your site here
-  url: 'https://www.bagetter.com/',
+  url: 'https://jchable.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/',
+  baseUrl: '/BaGetter/',
 
   // GitHub pages deployment config.
-  // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'bagetter', // Usually your GitHub org/user name.
+  organizationName: 'jchable', // Usually your GitHub org/user name.
   projectName: 'BaGetter', // Usually your repo name.
 
   deploymentBranch: "gh-pages",
@@ -39,10 +38,6 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/bagetter/BaGetter/tree/main/docs',
         },
         theme: {
           customCss: './src/css/custom.css',

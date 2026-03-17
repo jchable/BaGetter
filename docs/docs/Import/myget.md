@@ -178,4 +178,4 @@ la section `packageSourceCredentials`.
 - **Packages supprimés (unlisted)** : `nuget list` ne retourne pas les packages délistés sur MyGet.
   Si vous avez besoin de les migrer, exportez-les manuellement depuis l'interface MyGet.
 - **Symboles** : ce guide couvre uniquement les feeds NuGet (`.nupkg`).
-  Pour les feeds de symboles (`.snupkg`), consultez la [documentation symboles](../configuration#symbols).
+  Pour les feeds de symboles (`.snupkg`), consultez la [documentation Docker — Symbol server](../Installation/docker.md#symbol-server).
