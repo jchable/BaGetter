@@ -113,6 +113,10 @@ Key `appsettings.json` settings:
 }
 ```
 
+## Git Commits
+
+- Never add `Co-Authored-By` lines to commit messages
+
 ## Code Style
 
 Enforced via [.editorconfig](.editorconfig):
