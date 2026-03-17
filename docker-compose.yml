@@ -1,17 +1,84 @@
 services:
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bagetter
+      POSTGRES_USER: bagetter
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bagetter -d bagetter"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9002:9001"   # MinIO console
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio-init:
+    image: minio/mc:latest
+    restart: on-failure
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "
+        mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
+        mc mb --ignore-existing local/nuget-packages
+      "
+
   bagetter:
     build:
       context: .
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "8082:8080"
     environment:
-      - ASPNETCORE_URLS=http://+:8080
-      - ApiKey=MySecretApiKey123!
-      - Authentication__Credentials__0__Username=admin
-      - Authentication__Credentials__0__Password=P@ssw0rd!
-    volumes:
-      - bagetter-data:/data
+      ASPNETCORE_URLS: "http://+:8080"
+      ApiKey: ${BAGETTER_API_KEY}
+      Authentication__Credentials__0__Username: ${BAGETTER_USER}
+      Authentication__Credentials__0__Password: ${BAGETTER_PASSWORD}
+      Database__Type: "PostgreSql"
+      Database__ConnectionString: "Host=postgres;Port=5432;Database=bagetter;Username=bagetter;Password=${POSTGRES_PASSWORD};Minimum Pool Size=2;Maximum Pool Size=20;Connection Idle Lifetime=60"
+      Storage__Type: "AwsS3"
+      Storage__Endpoint: "http://minio:9000"
+      Storage__Bucket: "nuget-packages"
+      Storage__AccessKey: ${MINIO_ROOT_USER}
+      Storage__SecretKey: ${MINIO_ROOT_PASSWORD}
+      Search__Type: "Database"
+      Statistics__EnableStatisticsPage: "false"
+      Statistics__ListConfiguredServices: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
 volumes:
+  postgres-data:
+  minio-data:
   bagetter-data:

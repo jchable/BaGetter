@@ -33,16 +33,13 @@ public class ConfigureBaGetterServer
                 var origins = _baGetterOptions.AllowedCorsOrigins;
                 if (origins is { Length: > 0 })
                 {
-                    builder.WithOrigins(origins);
+                    builder
+                        .WithOrigins(origins)
+                        .WithMethods("GET", "HEAD", "OPTIONS")
+                        .WithHeaders("Accept", "Accept-Language", "Content-Language", "Content-Type");
                 }
-                else
-                {
-                    builder.AllowAnyOrigin();
-                }
-
-                builder
-                    .WithMethods("GET", "HEAD", "OPTIONS")
-                    .WithHeaders("Accept", "Accept-Language", "Content-Language", "Content-Type");
+                // If no origins are configured, no CORS policy is applied.
+                // NuGet CLI and dotnet restore are not browser requests and are unaffected.
             });
     }
 
@@ -66,13 +63,9 @@ public class ConfigureBaGetterServer
                 options.KnownProxies.Add(IPAddress.Parse(proxy));
             }
         }
-        else
-        {
-            // No trusted proxies configured: accept forwarded headers from any source.
-            // This is not recommended in production — configure TrustedProxies for security.
-            options.KnownNetworks.Clear();
-            options.KnownProxies.Clear();
-        }
+        // If no trusted proxies are configured, ASP.NET Core defaults (loopback only)
+        // are preserved — do not clear KnownNetworks/KnownProxies here.
+        // Configure TrustedProxies in appsettings.json to match your reverse proxy IP.
     }
 
     public void Configure(IISServerOptions options)

@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using BaGetter.Web;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Constraints;
 
@@ -35,7 +36,8 @@ public class BaGetterEndpointBuilder
             name: Routes.UploadPackageRouteName,
             pattern: "api/v2/package",
             defaults: new { controller = "PackagePublish", action = "Upload" },
-            constraints: new { httpMethod = new HttpMethodRouteConstraint("PUT") });
+            constraints: new { httpMethod = new HttpMethodRouteConstraint("PUT") })
+            .RequireRateLimiting("upload");
 
         endpoints.MapControllerRoute(
             name: Routes.DeleteRouteName,
@@ -80,12 +82,14 @@ public class BaGetterEndpointBuilder
         endpoints.MapControllerRoute(
             name: Routes.SearchRouteName,
             pattern: "v3/search",
-            defaults: new { controller = "Search", action = "Search" });
+            defaults: new { controller = "Search", action = "Search" })
+            .RequireRateLimiting("search");
 
         endpoints.MapControllerRoute(
             name: Routes.AutocompleteRouteName,
             pattern: "v3/autocomplete",
-            defaults: new { controller = "Search", action = "Autocomplete" });
+            defaults: new { controller = "Search", action = "Autocomplete" })
+            .RequireRateLimiting("search");
 
         // This is an unofficial API to find packages that depend on a given package.
         endpoints.MapControllerRoute(

@@ -12,6 +12,9 @@ namespace BaGetter.Web;
 [Authorize(AuthenticationSchemes = AuthenticationConstants.NugetBasicAuthenticationScheme, Policy = AuthenticationConstants.NugetUserPolicy)]
 public class SearchController : Controller
 {
+    private const int MaxTake = 100;
+    private const int MaxSkip = 10_000;
+
     private readonly ISearchService _searchService;
 
     public SearchController(ISearchService searchService)
@@ -32,6 +35,9 @@ public class SearchController : Controller
         [FromQuery]string framework = null,
         CancellationToken cancellationToken = default)
     {
+        skip = Math.Clamp(skip, 0, MaxSkip);
+        take = Math.Clamp(take, 1, MaxTake);
+
         var request = new SearchRequest
         {
             Skip = skip,
@@ -72,6 +78,9 @@ public class SearchController : Controller
         }
         else
         {
+            skip = Math.Clamp(skip, 0, MaxSkip);
+            take = Math.Clamp(take, 1, MaxTake);
+
             var request = new AutocompleteRequest
             {
                 IncludePrerelease = prerelease,

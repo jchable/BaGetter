@@ -1,5 +1,8 @@
 using System;
 using BaGetter.Authentication;
+using Microsoft.AspNetCore.RateLimiting;
+using Serilog;
+using Serilog.Events;
 using BaGetter.Core;
 using BaGetter.Core.Extensions;
 using BaGetter.Web;
@@ -50,6 +53,28 @@ public class Startup
         services.AddHealthChecks();
 
         services.AddCors();
+
+        services.AddRateLimiter(rateLimiterOptions =>
+        {
+            // Upload: 5 requests per user per 10 minutes (generous for CI pipelines)
+            rateLimiterOptions.AddSlidingWindowLimiter(RateLimitPolicies.Upload, options =>
+            {
+                options.PermitLimit = 5;
+                options.Window = TimeSpan.FromMinutes(10);
+                options.SegmentsPerWindow = 2;
+                options.QueueLimit = 0;
+            });
+
+            // Search/autocomplete: 200 requests per minute per IP
+            rateLimiterOptions.AddFixedWindowLimiter(RateLimitPolicies.Search, options =>
+            {
+                options.PermitLimit = 200;
+                options.Window = TimeSpan.FromMinutes(1);
+                options.QueueLimit = 0;
+            });
+
+            rateLimiterOptions.RejectionStatusCode = 429;
+        });
     }
 
     private void ConfigureBaGetterApplication(BaGetterApplication app)
@@ -86,6 +111,32 @@ public class Startup
         app.UseForwardedHeaders();
         app.UsePathBase(options.PathBase);
 
+        app.UseSerilogRequestLogging(opts =>
+        {
+            opts.EnrichDiagnosticContext = (diagCtx, httpCtx) =>
+            {
+                diagCtx.Set("RequestHost", httpCtx.Request.Host.Value);
+                diagCtx.Set("UserName", httpCtx.User?.Identity?.Name ?? "anonymous");
+                diagCtx.Set("RemoteIP", httpCtx.Connection.RemoteIpAddress?.ToString());
+            };
+            opts.GetLevel = (ctx, _, _) =>
+                ctx.Request.Path.StartsWithSegments("/health")
+                    ? LogEventLevel.Debug
+                    : LogEventLevel.Information;
+        });
+
+        app.Use(async (context, next) =>
+        {
+            var h = context.Response.Headers;
+            h["X-Content-Type-Options"] = "nosniff";
+            h["X-Frame-Options"] = "DENY";
+            h["Referrer-Policy"] = "strict-origin-when-cross-origin";
+            h["X-Permitted-Cross-Domain-Policies"] = "none";
+            h["Content-Security-Policy"] =
+                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'";
+            await next();
+        });
+
         app.UseStaticFiles();
         app.UseRouting();
 
@@ -93,6 +144,7 @@ public class Startup
 
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseRateLimiter();
 
         app.UseOperationCancelledMiddleware();
 

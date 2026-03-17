@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Serilog;
+using Serilog.Formatting.Compact;
 
 namespace BaGetter;
 
@@ -113,6 +115,16 @@ public class Program
     {
         return Host
             .CreateDefaultBuilder(args)
+            .UseSerilog((context, services, loggerConfig) =>
+            {
+                loggerConfig
+                    .ReadFrom.Configuration(context.Configuration)
+                    .ReadFrom.Services(services)
+                    .Enrich.FromLogContext()
+                    .Enrich.WithMachineName()
+                    .Enrich.WithThreadId()
+                    .WriteTo.Console(new CompactJsonFormatter());
+            })
             .ConfigureAppConfiguration((ctx, config) =>
             {
                 var root = Environment.GetEnvironmentVariable("BAGET_CONFIG_ROOT");
