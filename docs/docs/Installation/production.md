@@ -133,37 +133,63 @@ Or in `nuget.config`:
 </configuration>
 ```
 
-## Reverse proxy (Nginx example)
+## Reverse proxy (Caddy)
 
-```nginx
-server {
-    listen 443 ssl;
-    server_name nuget.yourcompany.internal;
+[Caddy](https://caddyserver.com) is the recommended option: it handles TLS automatically via Let's Encrypt and requires no manual certificate management.
 
-    ssl_certificate     /etc/ssl/certs/yourcompany.crt;
-    ssl_certificate_key /etc/ssl/private/yourcompany.key;
+### Install Caddy
+
+```shell
+# Debian / Ubuntu
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update && sudo apt install caddy
+```
+
+### Caddyfile
+
+Create `/etc/caddy/Caddyfile`:
+
+```caddyfile
+nuget.yourcompany.internal {
+    # Block direct access to the health endpoint
+    respond /health 404
 
     # Forward proxy headers so BaGetter generates correct URLs
-    proxy_set_header Host              $host;
-    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header X-Forwarded-Host  $host;
+    header_up X-Forwarded-Proto {scheme}
+    header_up X-Forwarded-Host  {host}
 
-    # Large package uploads
-    client_max_body_size 8g;
-
-    # Block health endpoint from external access
-    location /health {
-        deny all;
+    # Large package uploads (8 GiB)
+    request_body {
+        max_size 8GB
     }
 
-    location / {
-        proxy_pass http://127.0.0.1:8082;
-    }
+    reverse_proxy 127.0.0.1:8082
 }
 ```
 
-Configure `TrustedProxies__0` in your `.env` with the IP of this Nginx host.
+Reload Caddy after saving:
+
+```shell
+sudo systemctl reload caddy
+```
+
+### Configure TrustedProxies
+
+Add the Caddy host IP to your `docker-compose.yml` environment (or `.env`):
+
+```yaml
+TrustedProxies__0: "127.0.0.1"
+```
+
+If Caddy runs on the same host as Docker, this is `127.0.0.1`. If Caddy runs in a separate container or VM, use its actual IP.
+
+:::tip Caddy with Docker
+
+To run Caddy as a Docker container instead of a system service, add it to `docker-compose.yml` and mount the Caddyfile. The `bagetter` service port (`8082`) can then be changed to an internal-only binding (`127.0.0.1:8082:8080`).
+
+:::
 
 ## Security features
 
@@ -198,7 +224,13 @@ Health check requests (`/health`) are logged at `Debug` level and suppressed by 
 
 ## MinIO console
 
-The MinIO admin console is accessible at [http://localhost:9002](http://localhost:9002) (internal only — do not expose publicly). Log in with `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`.
+The MinIO console port is bound to `127.0.0.1` only — it is not reachable from the internet. Access it via an SSH tunnel from your workstation:
+
+```shell
+ssh -L 9002:127.0.0.1:9002 user@your-vps
+```
+
+Then open [http://localhost:9002](http://localhost:9002) in your browser. Log in with `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`.
 
 ## Database administration
 
@@ -212,6 +244,38 @@ docker exec -it bagetter-postgres-1 psql -U bagetter -d bagetter
 ssh -L 5432:localhost:5432 user@your-vps
 psql "host=localhost port=5432 dbname=bagetter user=bagetter password=<POSTGRES_PASSWORD>"
 ```
+
+## Backup
+
+:::info
+
+No automated backup is configured in the default stack. If this instance holds packages that cannot be lost, implement a backup strategy before going to production.
+
+:::
+
+### PostgreSQL
+
+```shell
+# Dump the database (run from the host)
+docker exec bagetter-postgres-1 pg_dump -U bagetter bagetter | gzip > bagetter-$(date +%F).sql.gz
+
+# Restore
+gunzip -c bagetter-2026-03-17.sql.gz | docker exec -i bagetter-postgres-1 psql -U bagetter bagetter
+```
+
+### MinIO (package files)
+
+Use the MinIO Client (`mc`) to mirror the bucket to another S3-compatible destination or to a local directory:
+
+```shell
+# Mirror to a local path
+docker run --rm --network host \
+  -v /backup/minio:/backup \
+  minio/mc:latest \
+  mirror local/nuget-packages /backup/nuget-packages
+```
+
+Or schedule both commands with `cron` / `systemd` timers and copy the archives off-server (e.g. with `rclone` to S3, B2, or SFTP).
 
 ## Updates
 
