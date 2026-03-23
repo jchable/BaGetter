@@ -23,7 +23,7 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
-      - "127.0.0.1:9002:9001"   # MinIO console (local only — access via SSH tunnel)
+      - "127.0.0.1:9004:9001"   # MinIO console (local only — access via SSH tunnel)
     volumes:
       - minio-data:/data
     healthcheck:

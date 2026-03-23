@@ -225,10 +225,10 @@ Health check requests (`/health`) are logged at `Debug` level and suppressed by 
 The MinIO console port is bound to `127.0.0.1` only — it is not reachable from the internet. Access it via an SSH tunnel from your workstation:
 
 ```shell
-ssh -L 9002:127.0.0.1:9002 user@your-vps
+ssh -L 9004:127.0.0.1:9004 user@your-vps
 ```
 
-Then open [http://localhost:9002](http://localhost:9002) in your browser. Log in with `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`.
+Then open [http://localhost:9004](http://localhost:9004) in your browser. Log in with `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`.
 
 ## Database administration
 
