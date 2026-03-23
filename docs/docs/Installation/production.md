@@ -64,7 +64,7 @@ Use a password manager or secrets vault to generate and store strong passwords.
 If you access the package browser UI from a browser, set your allowed origins in `docker-compose.yml` or as an environment variable:
 
 ```yaml
-AllowedCorsOrigins__0: "https://nuget.yourcompany.internal"
+AllowedCorsOrigins__0: "https://packages.dev.coderise.fr"
 ```
 
 If left empty, CORS is disabled entirely (NuGet CLI and `dotnet restore` are unaffected — they do not use CORS).
@@ -111,7 +111,7 @@ dotnet nuget push package.1.0.0.nupkg \
 ## Add the feed to your project
 
 ```shell
-dotnet nuget add source "https://nuget.yourcompany.internal/v3/index.json" \
+dotnet nuget add source "https://packages.dev.coderise.fr/v3/index.json" \
   --name "internal" \
   --username "<BAGETTER_USER>" \
   --password "<BAGETTER_PASSWORD>"
@@ -122,7 +122,7 @@ Or in `nuget.config`:
 ```xml
 <configuration>
   <packageSources>
-    <add key="internal" value="https://nuget.yourcompany.internal/v3/index.json" />
+    <add key="internal" value="https://packages.dev.coderise.fr/v3/index.json" />
   </packageSources>
   <packageSourceCredentials>
     <internal>
@@ -152,13 +152,9 @@ sudo apt update && sudo apt install caddy
 Create `/etc/caddy/Caddyfile`:
 
 ```caddyfile
-nuget.yourcompany.internal {
+packages.dev.coderise.fr {
     # Block direct access to the health endpoint
     respond /health 404
-
-    # Forward proxy headers so BaGetter generates correct URLs
-    header_up X-Forwarded-Proto {scheme}
-    header_up X-Forwarded-Host  {host}
 
     # Large package uploads (8 GiB)
     request_body {
@@ -168,6 +164,8 @@ nuget.yourcompany.internal {
     reverse_proxy 127.0.0.1:8082
 }
 ```
+
+Caddy automatically provisions a TLS certificate via Let's Encrypt. Make sure your DNS `A` record for `packages.dev.coderise.fr` points to the VPS public IP, and that ports **80** and **443** are open in the firewall.
 
 Reload Caddy after saving:
 
