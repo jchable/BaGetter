@@ -270,12 +270,29 @@ Or schedule both commands with `cron` / `systemd` timers and copy the archives o
 
 ## Updates
 
-```shell
-# Pull latest code
-git pull
+### From your workstation (remote)
 
-# Rebuild and restart BaGetter only (zero-downtime for DB/MinIO)
+A script is provided to update the production server from your local machine:
+
+```shell
+bash scripts/server-update.sh
+```
+
+This connects via SSH, pulls the latest code, rebuilds BaGetter, verifies the health check, and cleans up the Docker build cache.
+
+By default it targets `root@164.90.168.212`. To use a different host:
+
+```shell
+bash scripts/server-update.sh deploy@your-server-ip
+```
+
+### From the server (manual)
+
+```shell
+cd /opt/BaGetter
+git pull
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build bagetter
+docker builder prune -f
 ```
 
 Database migrations run automatically at startup (`RunMigrationsAtStartup: true`).
