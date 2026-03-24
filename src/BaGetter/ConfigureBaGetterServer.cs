@@ -60,7 +60,17 @@ public class ConfigureBaGetterServer
             options.KnownProxies.Clear();
             foreach (var proxy in trustedProxies.Where(p => !string.IsNullOrWhiteSpace(p)))
             {
-                options.KnownProxies.Add(IPAddress.Parse(proxy));
+                var slashIndex = proxy.IndexOf('/');
+                if (slashIndex >= 0)
+                {
+                    var address = IPAddress.Parse(proxy[..slashIndex]);
+                    var prefixLength = int.Parse(proxy[(slashIndex + 1)..]);
+                    options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(address, prefixLength));
+                }
+                else
+                {
+                    options.KnownProxies.Add(IPAddress.Parse(proxy));
+                }
             }
         }
         // If no trusted proxies are configured, ASP.NET Core defaults (loopback only)
