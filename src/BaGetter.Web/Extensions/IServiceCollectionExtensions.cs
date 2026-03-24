@@ -25,7 +25,10 @@ public static class IServiceCollectionExtensions
                 options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
             });
 
-        services.AddRazorPages();
+        services.AddRazorPages(options =>
+        {
+            options.Conventions.AuthorizeFolder("/", AuthenticationConstants.NugetUserPolicy);
+        });
 
         services.AddHttpContextAccessor();
         services.AddTransient<IUrlGenerator, BaGetterUrlGenerator>();
