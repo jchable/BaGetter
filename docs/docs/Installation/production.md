@@ -4,9 +4,29 @@ This guide covers deploying BaGetter on a VPS or dedicated server using Docker C
 
 ## Prerequisites
 
-- Docker Engine 24+ and Docker Compose v2
-- A reverse proxy (Nginx, Traefik, Caddy) for TLS termination
-- A domain name or internal DNS entry
+- A VPS or dedicated server running Debian 12 or Ubuntu 24.04
+- A domain name with DNS pointing to your server
+
+### Automated server setup
+
+A hardening script is provided to prepare a fresh VPS:
+
+```shell
+sudo bash scripts/server-setup.sh
+```
+
+This script installs and configures:
+
+| Component | Configuration |
+|---|---|
+| **UFW firewall** | Allow SSH, HTTP (80), HTTPS (443) only |
+| **SSH hardening** | Root login disabled, password auth disabled, max 3 tries |
+| **Fail2ban** | SSH jail — 5 retries → 1h ban |
+| **Unattended upgrades** | Automatic security patches |
+| **Docker Engine** | Latest stable from Docker official repo |
+| **deploy user** | Non-root user with Docker access |
+
+If you prefer to set up the server manually, ensure Docker Engine 24+ and Docker Compose v2 are installed.
 
 ## Stack
 
@@ -14,6 +34,7 @@ The production stack includes:
 
 | Service  | Purpose                        |
 |----------|--------------------------------|
+| Caddy    | Reverse proxy, automatic TLS via Let's Encrypt |
 | BaGetter | NuGet server application       |
 | PostgreSQL 17 | Package metadata database |
 | MinIO    | S3-compatible package storage  |
@@ -69,21 +90,21 @@ AllowedCorsOrigins__0: "https://packages.dev.coderise.fr"
 
 If left empty, CORS is disabled entirely (NuGet CLI and `dotnet restore` are unaffected — they do not use CORS).
 
-### 4. Configure Trusted Proxies
+### 4. Build and start
 
-When running behind a reverse proxy, tell BaGetter which IP address to trust for `X-Forwarded-*` headers:
-
-```yaml
-TrustedProxies__0: "172.20.0.1"   # Replace with your reverse proxy container IP
-```
-
-If not configured, BaGetter defaults to trusting loopback only (safe).
-
-### 5. Build and start
+Use the production override file to apply hardened settings (localhost-only ports, memory limits, trusted proxies, CORS, log rotation):
 
 ```shell
-docker compose up -d --build
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
+
+The production override (`docker-compose.prod.yml`) automatically configures:
+
+- BaGetter port bound to `127.0.0.1` only (Caddy proxies)
+- `TrustedProxies` set to `127.0.0.1`
+- CORS allowed origin set to `https://packages.dev.coderise.fr`
+- Memory limits on all services
+- Log rotation (json-file driver with size limits)
 
 ### 6. Verify
 
@@ -135,57 +156,29 @@ Or in `nuget.config`:
 
 ## Reverse proxy (Caddy)
 
-[Caddy](https://caddyserver.com) is the recommended option: it handles TLS automatically via Let's Encrypt and requires no manual certificate management.
+Caddy runs as a Docker container in the production stack (`docker-compose.prod.yml`). It handles TLS automatically via Let's Encrypt — no manual certificate management needed.
 
-### Install Caddy
-
-```shell
-# Debian / Ubuntu
-sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
-sudo apt update && sudo apt install caddy
-```
-
-### Caddyfile
-
-Create `/etc/caddy/Caddyfile`:
+The `Caddyfile` at the repository root configures the reverse proxy:
 
 ```caddyfile
 packages.dev.coderise.fr {
-    # Block direct access to the health endpoint
     respond /health 404
 
-    # Large package uploads (8 GiB)
     request_body {
         max_size 8GB
     }
 
-    reverse_proxy 127.0.0.1:8082
+    reverse_proxy bagetter:8080
 }
 ```
 
-Caddy automatically provisions a TLS certificate via Let's Encrypt. Make sure your DNS `A` record for `packages.dev.coderise.fr` points to the VPS public IP, and that ports **80** and **443** are open in the firewall.
+To use a different domain, edit the `Caddyfile` before starting the stack.
 
-Reload Caddy after saving:
+Make sure your DNS `A` record for `packages.dev.coderise.fr` points to the VPS public IP, and that ports **80** and **443** are open in the firewall.
 
-```shell
-sudo systemctl reload caddy
-```
+:::info
 
-### Configure TrustedProxies
-
-Add the Caddy host IP to your `docker-compose.yml` environment (or `.env`):
-
-```yaml
-TrustedProxies__0: "127.0.0.1"
-```
-
-If Caddy runs on the same host as Docker, this is `127.0.0.1`. If Caddy runs in a separate container or VM, use its actual IP.
-
-:::tip Caddy with Docker
-
-To run Caddy as a Docker container instead of a system service, add it to `docker-compose.yml` and mount the Caddyfile. The `bagetter` service port (`8082`) can then be changed to an internal-only binding (`127.0.0.1:8082:8080`).
+BaGetter's port is not exposed to the host in production — Caddy reaches it through the Docker network. The `TrustedProxies` setting is automatically configured to trust the Docker subnet.
 
 :::
 
@@ -282,7 +275,7 @@ Or schedule both commands with `cron` / `systemd` timers and copy the archives o
 git pull
 
 # Rebuild and restart BaGetter only (zero-downtime for DB/MinIO)
-docker compose up -d --build bagetter
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build bagetter
 ```
 
 Database migrations run automatically at startup (`RunMigrationsAtStartup: true`).

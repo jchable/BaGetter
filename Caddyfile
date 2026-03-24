@@ -1,0 +1,11 @@
+packages.dev.coderise.fr {
+    # Block health endpoint from external access
+    respond /health 404
+
+    # Large package uploads (8 GiB)
+    request_body {
+        max_size 8GB
+    }
+
+    reverse_proxy bagetter:8080
+}
