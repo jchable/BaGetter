@@ -28,9 +28,11 @@ echo "── Rebuilding and restarting BaGetter..."
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build bagetter
 
 echo "── Waiting for health check..."
-sleep 10
+sleep 30
 if docker compose -f docker-compose.yml -f docker-compose.prod.yml ps bagetter | grep -q healthy; then
   echo "── BaGetter is healthy."
+  echo "── Ensuring Caddy is running..."
+  docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d caddy
 else
   echo "── WARNING: BaGetter is not yet healthy. Check logs:"
   echo "   docker compose -f docker-compose.yml -f docker-compose.prod.yml logs bagetter --tail 30"
