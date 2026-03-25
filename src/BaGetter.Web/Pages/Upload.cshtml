@@ -1,4 +1,4 @@
-﻿@page
+@page
 @inject IUrlGenerator _url
 
 @{
@@ -9,48 +9,46 @@
     var serviceIndexUrl = _url.GetServiceIndexUrl();
 }
 
-<div class="col-sm-12">
-    <h1>Upload</h1>
-    <hr class="breadcrumb-divider" />
+<h1>Upload</h1>
+<hr />
 
-    <div>You can push packages using the service index <code>@serviceIndexUrl</code>.</div>
+<p>You can push packages using the service index <code>@serviceIndexUrl</code>.</p>
 
-    <div class="tabbed-info" x-data="{ tabs: tabs, active: tabs[0] }">
-        <ul class="nav">
-            <template x-for="tab in tabs" :key="tab.name">
-                <li x-bind:class="{ 'active': active.name === tab.name }">
-                    <a href="#" x-text="tab.name" @@click="active = tab"></a>
-                </li>
+<div class="tabbed-info" x-data="{ tabs: tabs, active: tabs[0] }">
+    <ul class="nav tab-nav">
+        <template x-for="tab in tabs" :key="tab.name">
+            <li x-bind:class="{ 'active': active.name === tab.name }">
+                <a href="#" x-text="tab.name" @@click.prevent="active = tab"></a>
+            </li>
+        </template>
+    </ul>
+
+    <div class="tab-content-box">
+        <div class="tab-script">
+            <template x-for="line in active.content">
+                <div class="tab-script-line" x-text="line"></div>
             </template>
-        </ul>
-
-        <div class="content">
-            <div class="script">
-                <template x-for="line in active.content">
-                    <div class="script-line" x-text="line"></div>
-                </template>
-            </div>
-
-            <div class="copy-button">
-                <button class="btn btn-default btn-warning"
-                        type="button"
-                        data-tottle="popover"
-                        data-placement="bottom"
-                        data-content="Copied"
-                        @@click="window.baget.copyTextToClipboard(active.content.join('\n'), $el)">
-                    <i class="ms-Icon ms-Icon--Copy"></i>
-                </button>
-            </div>
         </div>
 
-        <div class="icon-text alert alert-warning">
-            For more information, please refer to
-            <a target="_blank"
-               rel="noopener noreferrer"
-               x-bind:href="active.documentation"
-               x-text="`${active.name}'s documentation`">
-            </a>.
+        <div class="tab-copy">
+            <button class="btn btn-warning"
+                    type="button"
+                    data-bs-toggle="popover"
+                    data-bs-placement="bottom"
+                    data-bs-content="Copied"
+                    @@click="window.baget.copyTextToClipboard(active.content.join('\n'), $el)">
+                <i class="ms-Icon ms-Icon--Copy"></i>
+            </button>
         </div>
+    </div>
+
+    <div class="alert alert-warning mt-2">
+        For more information, please refer to
+        <a target="_blank"
+           rel="noopener noreferrer"
+           x-bind:href="active.documentation"
+           x-text="`${active.name}'s documentation`">
+        </a>.
     </div>
 </div>
 
@@ -74,7 +72,6 @@
             documentation: "https://fsprojects.github.io/Paket/paket-push.html",
         },
 
-        // TODO: This is broken...
         {
             name: "PowerShellGet",
             content: [
