@@ -15,7 +15,7 @@ namespace BaGetter.Web;
 /// See: https://docs.microsoft.com/en-us/nuget/api/registration-base-url-resource
 /// </summary>
 
-[Authorize(AuthenticationSchemes = AuthenticationConstants.NugetBasicAuthenticationScheme, Policy = AuthenticationConstants.NugetUserPolicy)]
+[Authorize(AuthenticationSchemes = AuthenticationConstants.AllSchemes, Policy = AuthenticationConstants.PolicyCanRead)]
 public class PackageMetadataController : Controller
 {
     private readonly IPackageMetadataService _metadata;

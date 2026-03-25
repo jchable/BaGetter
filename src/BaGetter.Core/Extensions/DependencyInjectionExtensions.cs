@@ -93,7 +93,8 @@ public static partial class DependencyInjectionExtensions
 
         services.TryAddScoped<DownloadsImporter>();
 
-        services.TryAddTransient<IAuthenticationService, ApiKeyAuthenticationService>();
+        services.TryAddScoped<IApiKeyService, ApiKeyService>();
+        services.TryAddScoped<IInvitationService, InvitationService>();
         services.TryAddTransient<IPackageContentService, DefaultPackageContentService>();
         services.TryAddTransient<IPackageDeletionService, PackageDeletionService>();
         services.TryAddTransient<IPackageIndexingService, PackageIndexingService>();

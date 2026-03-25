@@ -100,11 +100,64 @@ public class Program
             });
         });
 
+        app.Command("create-admin", cmd =>
+        {
+            cmd.Description = "Create the initial admin user (first-run setup)";
+
+            var emailOpt = cmd.Option("-e|--email", "Admin email address", CommandOptionType.SingleValue).IsRequired();
+            var passwordOpt = cmd.Option("-p|--password", "Admin password (min 8 chars)", CommandOptionType.SingleValue).IsRequired();
+            var displayNameOpt = cmd.Option("-n|--name", "Display name (defaults to email)", CommandOptionType.SingleValue);
+
+            cmd.OnExecuteAsync(async cancellationToken =>
+            {
+                using var scope = host.Services.CreateScope();
+                var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<BaGetter.Core.BaGetterUser>>();
+                var roleManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.RoleManager<BaGetter.Core.BaGetterRole>>();
+
+                // Ensure roles exist
+                foreach (var roleName in new[] { BaGetter.Core.Roles.Owner, BaGetter.Core.Roles.Admin, BaGetter.Core.Roles.Publisher, BaGetter.Core.Roles.Reader })
+                {
+                    if (!await roleManager.RoleExistsAsync(roleName))
+                        await roleManager.CreateAsync(new BaGetter.Core.BaGetterRole { Name = roleName });
+                }
+
+                var email = emailOpt.Value()!;
+                var existing = await userManager.FindByEmailAsync(email);
+                if (existing != null)
+                {
+                    Console.Error.WriteLine($"User {email} already exists.");
+                    Environment.ExitCode = 1;
+                    return;
+                }
+
+                var user = new BaGetter.Core.BaGetterUser
+                {
+                    UserName = email,
+                    Email = email,
+                    DisplayName = displayNameOpt.Value() ?? email,
+                    EmailConfirmed = true,
+                };
+
+                var result = await userManager.CreateAsync(user, passwordOpt.Value()!);
+                if (!result.Succeeded)
+                {
+                    foreach (var error in result.Errors)
+                        Console.Error.WriteLine($"  {error.Description}");
+                    Environment.ExitCode = 1;
+                    return;
+                }
+
+                await userManager.AddToRoleAsync(user, BaGetter.Core.Roles.Owner);
+                Console.WriteLine($"Admin user {email} created with Owner role.");
+            });
+        });
+
         app.Option("--urls", "The URLs that BaGetter should bind to.", CommandOptionType.SingleValue);
 
         app.OnExecuteAsync(async cancellationToken =>
         {
             await host.RunMigrationsAsync(cancellationToken);
+            await host.SeedRolesAsync(cancellationToken);
             await host.RunAsync(cancellationToken);
         });
 

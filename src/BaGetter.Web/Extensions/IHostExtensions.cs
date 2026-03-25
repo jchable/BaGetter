@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -32,6 +33,23 @@ public static class IHostExtensions
             if (ctx != null)
             {
                 await ctx.RunMigrationsAsync(cancellationToken);
+            }
+        }
+    }
+
+    public static async Task SeedRolesAsync(
+        this IHost host,
+        CancellationToken cancellationToken = default)
+    {
+        using var scope = host.Services.CreateScope();
+        var roleManager = scope.ServiceProvider.GetService<RoleManager<BaGetterRole>>();
+        if (roleManager == null) return;
+
+        foreach (var roleName in new[] { Roles.Owner, Roles.Admin, Roles.Publisher, Roles.Reader })
+        {
+            if (!await roleManager.RoleExistsAsync(roleName))
+            {
+                await roleManager.CreateAsync(new BaGetterRole { Name = roleName });
             }
         }
     }

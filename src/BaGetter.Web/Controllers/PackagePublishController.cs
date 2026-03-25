@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BaGetter.Authentication;
 using BaGetter.Core;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -11,9 +13,10 @@ using NuGet.Versioning;
 
 namespace BaGetter.Web;
 
+[Authorize(AuthenticationSchemes = AuthenticationConstants.AllSchemes,
+           Policy = AuthenticationConstants.PolicyCanPublish)]
 public class PackagePublishController : Controller
 {
-    private readonly IAuthenticationService _authentication;
     private readonly IPackageIndexingService _indexer;
     private readonly IPackageDatabase _packages;
     private readonly IPackageDeletionService _deleteService;
@@ -22,7 +25,6 @@ public class PackagePublishController : Controller
     private readonly ILogger<PackagePublishController> _logger;
 
     public PackagePublishController(
-        IAuthenticationService authentication,
         IPackageIndexingService indexer,
         IPackageDatabase packages,
         IPackageDeletionService deletionService,
@@ -30,14 +32,12 @@ public class PackagePublishController : Controller
         IOptionsSnapshot<BaGetterOptions> options,
         ILogger<PackagePublishController> logger)
     {
-        ArgumentNullException.ThrowIfNull(authentication);
         ArgumentNullException.ThrowIfNull(indexer);
         ArgumentNullException.ThrowIfNull(packages);
         ArgumentNullException.ThrowIfNull(deletionService);
         ArgumentNullException.ThrowIfNull(deprecations);
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(logger);
-        _authentication = authentication;
         _indexer = indexer;
         _packages = packages;
         _deleteService = deletionService;
@@ -49,8 +49,7 @@ public class PackagePublishController : Controller
     // See: https://docs.microsoft.com/en-us/nuget/api/package-publish-resource#push-a-package
     public async Task Upload(CancellationToken cancellationToken)
     {
-        if (_options.Value.IsReadOnlyMode ||
-            !await _authentication.AuthenticateAsync(Request.GetApiKey(), cancellationToken))
+        if (_options.Value.IsReadOnlyMode)
         {
             HttpContext.Response.StatusCode = 401;
             return;
@@ -85,7 +84,6 @@ public class PackagePublishController : Controller
         catch (Exception e)
         {
             _logger.LogError(e, "Exception thrown during package upload");
-
             HttpContext.Response.StatusCode = 500;
         }
     }
@@ -94,85 +92,46 @@ public class PackagePublishController : Controller
     public async Task<IActionResult> Delete(string id, string version, CancellationToken cancellationToken)
     {
         if (_options.Value.IsReadOnlyMode)
-        {
             return Unauthorized();
-        }
 
         if (!NuGetVersion.TryParse(version, out var nugetVersion))
-        {
             return NotFound();
-        }
-
-        if (!await _authentication.AuthenticateAsync(Request.GetApiKey(), cancellationToken))
-        {
-            return Unauthorized();
-        }
 
         if (await _deleteService.TryDeletePackageAsync(id, nugetVersion, cancellationToken))
-        {
             return NoContent();
-        }
-        else
-        {
-            return NotFound();
-        }
+
+        return NotFound();
     }
 
     [HttpPost]
     public async Task<IActionResult> Relist(string id, string version, CancellationToken cancellationToken)
     {
         if (_options.Value.IsReadOnlyMode)
-        {
             return Unauthorized();
-        }
 
         if (!NuGetVersion.TryParse(version, out var nugetVersion))
-        {
             return NotFound();
-        }
-
-        if (!await _authentication.AuthenticateAsync(Request.GetApiKey(), cancellationToken))
-        {
-            return Unauthorized();
-        }
 
         if (await _packages.RelistPackageAsync(id, nugetVersion, cancellationToken))
-        {
             return Ok();
-        }
-        else
-        {
-            return NotFound();
-        }
+
+        return NotFound();
     }
 
     [HttpPost]
     public async Task<IActionResult> Deprecate(string id, string version, [FromBody] DeprecatePackageRequest request, CancellationToken cancellationToken)
     {
         if (_options.Value.IsReadOnlyMode)
-        {
             return Unauthorized();
-        }
 
         if (!NuGetVersion.TryParse(version, out var nugetVersion))
-        {
             return NotFound();
-        }
-
-        if (!await _authentication.AuthenticateAsync(Request.GetApiKey(), cancellationToken))
-        {
-            return Unauthorized();
-        }
 
         if (!await _packages.ExistsAsync(id, nugetVersion, cancellationToken))
-        {
             return NotFound();
-        }
 
         if (request?.Reasons == null || request.Reasons.Count == 0)
-        {
             return BadRequest("At least one deprecation reason is required.");
-        }
 
         var info = new PackageDeprecationInfo
         {
@@ -186,9 +145,7 @@ public class PackagePublishController : Controller
         {
             var success = await _deprecations.DeprecateAsync(id, nugetVersion, info, cancellationToken);
             if (!success)
-            {
                 return NotFound();
-            }
         }
         catch (Exception e)
         {

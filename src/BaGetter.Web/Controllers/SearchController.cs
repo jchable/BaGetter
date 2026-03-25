@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BaGetter.Web;
 
-[Authorize(AuthenticationSchemes = AuthenticationConstants.NugetBasicAuthenticationScheme, Policy = AuthenticationConstants.NugetUserPolicy)]
+[Authorize(AuthenticationSchemes = AuthenticationConstants.AllSchemes, Policy = AuthenticationConstants.PolicyCanRead)]
 public class SearchController : Controller
 {
     private const int MaxTake = 100;

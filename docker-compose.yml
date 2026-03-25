@@ -54,8 +54,7 @@ services:
     environment:
       ASPNETCORE_URLS: "http://+:8080"
       ApiKey: ${BAGETTER_API_KEY}
-      Authentication__Credentials__0__Username: ${BAGETTER_USER}
-      Authentication__Credentials__0__Password: ${BAGETTER_PASSWORD}
+      Authentication__ApiKey: ${BAGETTER_API_KEY}
       Database__Type: "PostgreSql"
       Database__ConnectionString: "Host=postgres;Port=5432;Database=bagetter;Username=bagetter;Password=${POSTGRES_PASSWORD};Minimum Pool Size=2;Maximum Pool Size=20;Connection Idle Lifetime=60"
       Storage__Type: "AwsS3"

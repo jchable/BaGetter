@@ -1,15 +1,10 @@
 using System;
-using BaGetter.Authentication;
 using Microsoft.AspNetCore.RateLimiting;
 using Serilog;
 using Serilog.Events;
 using BaGetter.Core;
 using BaGetter.Core.Extensions;
 using BaGetter.Web;
-using BaGetter.Web.Authentication;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.OAuth;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation;
@@ -79,9 +74,8 @@ public class Startup
 
     private void ConfigureBaGetterApplication(BaGetterApplication app)
     {
-        //Add base authentication and authorization
-        app.AddNugetBasicHttpAuthentication();
-        app.AddNugetBasicHttpAuthorization();
+        // Authentication: Identity (cookie) + API key + OAuth
+        app.AddBaGetterAuthentication(Configuration);
 
         // Add database providers.
         app.AddPostgreSqlDatabase();
@@ -133,7 +127,7 @@ public class Startup
             h["Referrer-Policy"] = "strict-origin-when-cross-origin";
             h["X-Permitted-Cross-Domain-Policies"] = "none";
             h["Content-Security-Policy"] =
-                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'";
+                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'";
             await next();
         });
 

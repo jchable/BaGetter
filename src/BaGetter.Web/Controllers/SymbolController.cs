@@ -10,38 +10,34 @@ using Microsoft.Extensions.Options;
 
 namespace BaGetter.Web;
 
-[Authorize(AuthenticationSchemes = AuthenticationConstants.NugetBasicAuthenticationScheme, Policy = AuthenticationConstants.NugetUserPolicy)]
+[Authorize(AuthenticationSchemes = AuthenticationConstants.AllSchemes,
+           Policy = AuthenticationConstants.PolicyCanPublish)]
 public class SymbolController : Controller
 {
-    private readonly IAuthenticationService _authentication;
     private readonly ISymbolIndexingService _indexer;
     private readonly ISymbolStorageService _storage;
     private readonly IOptionsSnapshot<BaGetterOptions> _options;
     private readonly ILogger<SymbolController> _logger;
 
     public SymbolController(
-        IAuthenticationService authentication,
         ISymbolIndexingService indexer,
         ISymbolStorageService storage,
         IOptionsSnapshot<BaGetterOptions> options,
         ILogger<SymbolController> logger)
     {
-        ArgumentNullException.ThrowIfNull(authentication);
         ArgumentNullException.ThrowIfNull(indexer);
         ArgumentNullException.ThrowIfNull(storage);
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(logger);
-        _authentication = authentication;
         _indexer = indexer;
         _storage = storage;
         _options = options;
         _logger = logger;
     }
 
-    // See: https://docs.microsoft.com/en-us/nuget/api/package-publish-resource#push-a-package
     public async Task Upload(CancellationToken cancellationToken)
     {
-        if (_options.Value.IsReadOnlyMode || !await _authentication.AuthenticateAsync(Request.GetApiKey(), cancellationToken))
+        if (_options.Value.IsReadOnlyMode)
         {
             HttpContext.Response.StatusCode = 401;
             return;
@@ -76,18 +72,16 @@ public class SymbolController : Controller
         catch (Exception e)
         {
             _logger.LogError(e, "Exception thrown during symbol upload");
-
             HttpContext.Response.StatusCode = 500;
         }
     }
 
+    [Authorize(Policy = AuthenticationConstants.PolicyCanRead)]
     public async Task<IActionResult> Get(string file, string key)
     {
         var pdbStream = await _storage.GetPortablePdbContentStreamOrNullAsync(file, key);
         if (pdbStream == null)
-        {
             return NotFound();
-        }
 
         return File(pdbStream, "application/octet-stream");
     }

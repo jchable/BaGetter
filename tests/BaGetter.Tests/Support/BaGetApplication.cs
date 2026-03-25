@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit.Abstractions;
@@ -92,24 +93,27 @@ public class BaGetterApplication : WebApplicationFactory<Startup>
                 }
 
                 services.Configure<HealthCheckServiceOptions>(opts => opts.Registrations.Clear());
-
-                // Setup the integration test database.
-                var provider = services.BuildServiceProvider();
-                var scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
-
-                // Ensure the database is created before we run migrations. The migrations
-                // can create the database too, however, migrations check whether the database exists
-                // first. The SQLite provider implements this by attempting to open a connection,
-                // and if that fails, creating the database. This throws several exceptions that
-                // pauses the debugger repeatedly if CLR exceptions are enabled.
-                // See: https://github.com/dotnet/efcore/blob/644d3c8c3a604fd0121d90eaf34f14870e19bcff/src/EFCore.Sqlite.Core/Storage/Internal/SqliteDatabaseCreator.cs#L88-L98
-                using var scope = scopeFactory.CreateScope();
-                var ctx = scope.ServiceProvider.GetRequiredService<IContext>();
-                var dbCreator = ctx.Database.GetService<IRelationalDatabaseCreator>();
-
-                dbCreator.Create();
-                ctx.Database.Migrate();
             });
+    }
+
+    protected override IHost CreateHost(IHostBuilder builder)
+    {
+        var host = base.CreateHost(builder);
+
+        // Ensure the database is created before we run migrations. The migrations
+        // can create the database too, however, migrations check whether the database exists
+        // first. The SQLite provider implements this by attempting to open a connection,
+        // and if that fails, creating the database. This throws several exceptions that
+        // pauses the debugger repeatedly if CLR exceptions are enabled.
+        // See: https://github.com/dotnet/efcore/blob/644d3c8c3a604fd0121d90eaf34f14870e19bcff/src/EFCore.Sqlite.Core/Storage/Internal/SqliteDatabaseCreator.cs#L88-L98
+        using var scope = host.Services.CreateScope();
+        var ctx = scope.ServiceProvider.GetRequiredService<IContext>();
+        var dbCreator = ctx.Database.GetService<IRelationalDatabaseCreator>();
+
+        dbCreator.Create();
+        ctx.Database.Migrate();
+
+        return host;
     }
 }
 

@@ -14,8 +14,7 @@ namespace BaGetter.Web;
 /// The Package Content resource, used to download content from packages.
 /// See: https://docs.microsoft.com/nuget/api/package-base-address-resource
 /// </summary>
-
-[Authorize(AuthenticationSchemes = AuthenticationConstants.NugetBasicAuthenticationScheme, Policy = AuthenticationConstants.NugetUserPolicy)]
+[Authorize(AuthenticationSchemes = AuthenticationConstants.AllSchemes, Policy = AuthenticationConstants.PolicyCanRead)]
 public class PackageContentController : Controller
 {
     private readonly IPackageContentService _content;

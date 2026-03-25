@@ -3,9 +3,7 @@ using System.Text.Json.Serialization;
 using BaGetter.Authentication;
 using BaGetter.Core;
 using BaGetter.Web;
-using BaGetter.Web.Authentication;
 using BaGetter.Web.Helper;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BaGetter;
@@ -27,7 +25,11 @@ public static class IServiceCollectionExtensions
 
         services.AddRazorPages(options =>
         {
-            options.Conventions.AuthorizeFolder("/", AuthenticationConstants.NugetUserPolicy);
+            // Toutes les Razor pages requièrent CanRead par défaut
+            // sauf /Account/* qui est accessible sans auth (pages de connexion)
+            options.Conventions.AuthorizeFolder("/", AuthenticationConstants.PolicyCanRead);
+            options.Conventions.AllowAnonymousToFolder("/Account");
+            options.Conventions.AuthorizeFolder("/Admin", AuthenticationConstants.PolicyCanAdmin);
         });
 
         services.AddHttpContextAccessor();
