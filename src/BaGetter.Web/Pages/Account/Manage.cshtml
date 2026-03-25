@@ -1,0 +1,114 @@
+@page "/account/manage"
+@model ManageModel
+@using BaGetter.Core
+
+@{
+    ViewData["Title"] = "My account";
+    Layout = "_Layout";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1 class="mb-4">My account</h1>
+
+            @if (!string.IsNullOrEmpty(Model.StatusMessage))
+            {
+                <div class="alert @(Model.StatusMessage.StartsWith("Error") ? "alert-danger" : "alert-success")" role="alert">
+                    @Model.StatusMessage
+                </div>
+            }
+
+            <div class="card mb-4">
+                <div class="card-header">Profile</div>
+                <div class="card-body">
+                    <form method="post" asp-page-handler="UpdateProfile">
+                        <div class="mb-3">
+                            <label asp-for="Input.DisplayName" class="form-label">Display name</label>
+                            <input asp-for="Input.DisplayName" class="form-control" />
+                            <span asp-validation-for="Input.DisplayName" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input value="@Model.Email" class="form-control" disabled />
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">Change password</div>
+                <div class="card-body">
+                    @if (Model.HasPassword)
+                    {
+                        <form method="post" asp-page-handler="ChangePassword">
+                            <div class="mb-3">
+                                <label asp-for="PasswordInput.CurrentPassword" class="form-label">Current password</label>
+                                <input asp-for="PasswordInput.CurrentPassword" class="form-control" autocomplete="current-password" />
+                                <span asp-validation-for="PasswordInput.CurrentPassword" class="text-danger small"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="PasswordInput.NewPassword" class="form-label">New password</label>
+                                <input asp-for="PasswordInput.NewPassword" class="form-control" autocomplete="new-password" />
+                                <span asp-validation-for="PasswordInput.NewPassword" class="text-danger small"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="PasswordInput.ConfirmNewPassword" class="form-label">Confirm new password</label>
+                                <input asp-for="PasswordInput.ConfirmNewPassword" class="form-control" autocomplete="new-password" />
+                                <span asp-validation-for="PasswordInput.ConfirmNewPassword" class="text-danger small"></span>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Change password</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-3">Your account uses external login only. Set a password to also sign in with email.</p>
+                        <form method="post" asp-page-handler="SetPassword">
+                            <div class="mb-3">
+                                <label asp-for="PasswordInput.NewPassword" class="form-label">New password</label>
+                                <input asp-for="PasswordInput.NewPassword" class="form-control" autocomplete="new-password" />
+                                <span asp-validation-for="PasswordInput.NewPassword" class="text-danger small"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="PasswordInput.ConfirmNewPassword" class="form-label">Confirm new password</label>
+                                <input asp-for="PasswordInput.ConfirmNewPassword" class="form-control" autocomplete="new-password" />
+                                <span asp-validation-for="PasswordInput.ConfirmNewPassword" class="text-danger small"></span>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Set password</button>
+                        </form>
+                    }
+                </div>
+            </div>
+
+            @if (Model.ExternalLogins.Any())
+            {
+                <div class="card mb-4">
+                    <div class="card-header">Linked accounts</div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            @foreach (var login in Model.ExternalLogins)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>@login.ProviderDisplayName</span>
+                                    @if (Model.ExternalLogins.Count > 1 || Model.HasPassword)
+                                    {
+                                        <form method="post" asp-page-handler="RemoveLogin">
+                                            <input type="hidden" name="loginProvider" value="@login.LoginProvider" />
+                                            <input type="hidden" name="providerKey" value="@login.ProviderKey" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                                        </form>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

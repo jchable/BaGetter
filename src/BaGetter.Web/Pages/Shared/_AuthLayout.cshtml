@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - BaGetter</title>
+    <link rel="shortcut icon" href="~/_content/BaGetter.Web/favicon.ico">
+    <link rel="stylesheet" href="~/_content/BaGetter.Web/lib/bootstrap/dist/css/bootstrap.min.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="~/_content/BaGetter.Web/css/site.css" />
+</head>
+<body class="auth-body">
+    <main class="auth-container">
+        @RenderBody()
+    </main>
+
+    <script src="~/_content/BaGetter.Web/lib/bootstrap/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
