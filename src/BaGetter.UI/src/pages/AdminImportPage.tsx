@@ -25,6 +25,7 @@ function getAuthTypeValue(authType: string): number {
 
 export function AdminImportPage() {
   const [feedUrl, setFeedUrl] = useState("");
+  const [legacy, setLegacy] = useState(false);
   const [authType, setAuthType] = useState("None");
   const [apiKey, setApiKey] = useState("");
   const [username, setUsername] = useState("");
@@ -39,7 +40,7 @@ export function AdminImportPage() {
     mutationFn: () =>
       api.post("/admin/api/import/start", {
         feedUrl,
-        legacy: false,
+        legacy,
         authType: getAuthTypeValue(authType),
         apiKey: authType === "ApiKey" ? apiKey : undefined,
         username: authType === "Basic" ? username : undefined,
@@ -97,6 +98,17 @@ export function AdminImportPage() {
                 disabled={isRunning}
               />
             </div>
+
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={legacy}
+                onChange={(e) => setLegacy(e.target.checked)}
+                disabled={isRunning}
+                className="rounded border-[var(--border)]"
+              />
+              Legacy feed (NuGet v2 / OData)
+            </label>
 
             <div>
               <label htmlFor="authType" className="mb-1 block text-sm font-medium">Authentication</label>
