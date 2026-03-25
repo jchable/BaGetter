@@ -8,6 +8,7 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { SearchPage } from "@/pages/SearchPage";
 import { PackagePage } from "@/pages/PackagePage";
 import { UploadPage } from "@/pages/UploadPage";
+import { FeedInfoPage } from "@/pages/FeedInfoPage";
 import { StatisticsPage } from "@/pages/StatisticsPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
@@ -46,6 +47,7 @@ export function App() {
             <Route index element={<SearchPage />} />
             <Route path="packages/:id/:version?" element={<PackagePage />} />
             <Route path="upload" element={<UploadPage />} />
+            <Route path="feed-info" element={<FeedInfoPage />} />
             <Route path="stats" element={<StatisticsPage />} />
             <Route path="account/manage" element={<ManagePage />} />
             <Route path="account/access-denied" element={<AccessDeniedPage />} />

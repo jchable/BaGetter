@@ -18,6 +18,7 @@ import {
   ScrollText,
   Building2,
   Import,
+  Link2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +69,12 @@ export function AppShell() {
                 <Button variant="ghost" size="sm">
                   <Upload size={16} />
                   Upload
+                </Button>
+              </Link>
+              <Link to="/feed-info">
+                <Button variant="ghost" size="sm">
+                  <Link2 size={16} />
+                  Feed Info
                 </Button>
               </Link>
               {config?.statisticsEnabled && (
@@ -180,6 +187,9 @@ export function AppShell() {
             </Link>
             <Link to="/upload" className="block py-2 text-sm" onClick={() => setMenuOpen(false)}>
               Upload
+            </Link>
+            <Link to="/feed-info" className="block py-2 text-sm" onClick={() => setMenuOpen(false)}>
+              Feed Info
             </Link>
             {config?.statisticsEnabled && (
               <Link to="/stats" className="block py-2 text-sm" onClick={() => setMenuOpen(false)}>
