@@ -2,24 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Reflection;
-using System.Text;
 using System.Threading;
-using BaGetter.Protocol.Models;
 using System.Threading.Tasks;
-using BaGetter.Protocol;
 using Microsoft.Extensions.Logging;
+using NuGet.Common;
+using NuGet.Configuration;
+using NuGet.Protocol;
+using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
 
 namespace BaGetter.Core;
 
 public class FeedImportService : IFeedImportService
 {
-    private const int SearchPageSize = 20;
-
     private readonly IPackageIndexingService _indexingService;
     private readonly ILogger<FeedImportService> _logger;
 
@@ -43,37 +38,24 @@ public class FeedImportService : IFeedImportService
 
         try
         {
-            var client = CreateNuGetClient(options);
+            using var cacheContext = new SourceCacheContext();
+            var repository = CreateRepository(options);
 
-            // Phase 1: Enumerate all package IDs via search with pagination
+            // Phase 1: Enumerate all package IDs and versions
             _logger.LogInformation("Enumerating packages from {FeedUrl}...", options.FeedUrl);
             state.CurrentPackage = "Enumerating packages...";
             progress.Report(state);
 
-            var packageIds = await EnumeratePackageIdsAsync(client, cancellationToken);
-
-            _logger.LogInformation("Found {Count} unique package(s) on remote feed", packageIds.Count);
-
-            // Phase 2: For each package, list all versions and download+index each
-            var allVersions = new List<(string Id, NuGetVersion Version)>();
-
-            foreach (var packageId in packageIds)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var versions = await client.ListPackageVersionsAsync(packageId, includeUnlisted: true, cancellationToken);
-                foreach (var version in versions)
-                {
-                    allVersions.Add((packageId, version));
-                }
-            }
+            var allVersions = await EnumerateAllVersionsAsync(repository, cacheContext, cancellationToken);
 
             state.TotalVersions = allVersions.Count;
             progress.Report(state);
 
             _logger.LogInformation("Found {Count} total version(s) to import", allVersions.Count);
 
-            // Phase 3: Download and index each version
+            // Phase 2: Download and index each version
+            var findPackageById = await repository.GetResourceAsync<FindPackageByIdResource>(cancellationToken);
+
             foreach (var (id, version) in allVersions)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -83,15 +65,20 @@ public class FeedImportService : IFeedImportService
 
                 try
                 {
-                    using var packageStream = await DownloadPackageAsync(client, id, version, cancellationToken);
-                    if (packageStream == null)
+                    using var packageStream = new MemoryStream();
+                    var success = await findPackageById.CopyNupkgToStreamAsync(
+                        id, version, packageStream, cacheContext, NullLogger.Instance, cancellationToken);
+
+                    if (!success)
                     {
                         state.Failed++;
-                        state.Errors.Add($"{id} {version}: download returned null");
+                        state.Errors.Add($"{id} {version}: download failed");
                         _logger.LogWarning("Failed to download {PackageId} {Version} from remote feed", id, version);
+                        progress.Report(state);
                         continue;
                     }
 
+                    packageStream.Position = 0;
                     var result = await _indexingService.IndexAsync(packageStream, cancellationToken);
 
                     switch (result)
@@ -158,112 +145,80 @@ public class FeedImportService : IFeedImportService
         }
     }
 
-    private NuGetClient CreateNuGetClient(FeedImportOptions options)
+    private static SourceRepository CreateRepository(FeedImportOptions options)
     {
-        var assembly = Assembly.GetEntryAssembly();
-        var assemblyName = assembly?.GetName().Name ?? "BaGetter";
-        var assemblyVersion = assembly?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0";
-
-        var handler = new HttpClientHandler
-        {
-            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-        };
-
-        var httpClient = new HttpClient(handler)
-        {
-            Timeout = TimeSpan.FromSeconds(600),
-        };
-
-        httpClient.DefaultRequestHeaders.Add("User-Agent", $"{assemblyName}/{assemblyVersion}");
+        var packageSource = new PackageSource(options.FeedUrl.AbsoluteUri);
 
         // Configure authentication
-        switch (options.AuthType)
+        if (!string.IsNullOrEmpty(options.ApiKey))
         {
-            case MirrorAuthenticationType.Basic:
-                var credentials = Convert.ToBase64String(
-                    Encoding.UTF8.GetBytes($"{options.Username}:{options.Password}"));
-                httpClient.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Basic", credentials);
-                break;
-
-            case MirrorAuthenticationType.None when !string.IsNullOrEmpty(options.ApiKey):
-                // MyGet and many feeds accept API key as basic auth password
-                var apiKeyCredentials = Convert.ToBase64String(
-                    Encoding.UTF8.GetBytes($"api-key:{options.ApiKey}"));
-                httpClient.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Basic", apiKeyCredentials);
-                break;
+            // MyGet accepts API key as basic auth password
+            packageSource.Credentials = new PackageSourceCredential(
+                packageSource.Source, "api-key", options.ApiKey, isPasswordClearText: true, validAuthenticationTypesText: null);
+        }
+        else if (options.AuthType == MirrorAuthenticationType.Basic
+                 && !string.IsNullOrEmpty(options.Username))
+        {
+            packageSource.Credentials = new PackageSourceCredential(
+                packageSource.Source, options.Username, options.Password, isPasswordClearText: true, validAuthenticationTypesText: null);
         }
 
-        var clientFactory = new NuGetClientFactory(httpClient, options.FeedUrl.ToString());
-        return new NuGetClient(clientFactory);
+        // Both v2 and v3 use the same SourceRepository pattern with credentials
+        var providers = Repository.Provider.GetCoreV3();
+        return new SourceRepository(packageSource, providers);
     }
 
-    private static async Task<List<string>> EnumeratePackageIdsAsync(
-        NuGetClient client,
+    private static async Task<List<(string Id, NuGetVersion Version)>> EnumerateAllVersionsAsync(
+        SourceRepository repository,
+        SourceCacheContext cache,
         CancellationToken cancellationToken)
     {
-        var packageIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var allVersions = new List<(string Id, NuGetVersion Version)>();
+
+        // Use PackageSearchResource to enumerate all packages
+        var searchResource = await repository.GetResourceAsync<PackageSearchResource>(cancellationToken);
+
         var skip = 0;
+        const int take = 100;
+        var packageIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var results = await client.SearchAsync(
-                query: "",
-                skip: skip,
-                take: SearchPageSize,
-                includePrerelease: true,
-                cancellationToken: cancellationToken);
+            var results = await searchResource.SearchAsync(
+                "", new SearchFilter(includePrerelease: true), skip, take, NullLogger.Instance, cancellationToken);
 
-            if (results.Count == 0)
+            var batch = results.ToList();
+            if (batch.Count == 0)
                 break;
 
-            foreach (var result in results)
+            foreach (var result in batch)
             {
-                packageIds.Add(result.PackageId);
+                packageIds.Add(result.Identity.Id);
             }
 
-            skip += results.Count;
+            skip += batch.Count;
 
-            // If we got fewer results than requested, we've reached the end
-            if (results.Count < SearchPageSize)
+            if (batch.Count < take)
                 break;
         }
 
-        return packageIds.OrderBy(id => id, StringComparer.OrdinalIgnoreCase).ToList();
-    }
+        // For each unique package, enumerate all versions
+        var findByIdResource = await repository.GetResourceAsync<FindPackageByIdResource>(cancellationToken);
 
-    private static async Task<Stream> DownloadPackageAsync(
-        NuGetClient client,
-        string id,
-        NuGetVersion version,
-        CancellationToken cancellationToken)
-    {
-        try
+        foreach (var packageId in packageIds.OrderBy(id => id, StringComparer.OrdinalIgnoreCase))
         {
-            var stream = await client.DownloadPackageAsync(id, version, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
 
-            // Ensure the stream is seekable (required by PackageIndexingService)
-            if (!stream.CanSeek)
+            var versions = await findByIdResource.GetAllVersionsAsync(packageId, cache, NullLogger.Instance, cancellationToken);
+
+            foreach (var version in versions)
             {
-                var memoryStream = new MemoryStream();
-                await stream.CopyToAsync(memoryStream, cancellationToken);
-                await stream.DisposeAsync();
-                memoryStream.Position = 0;
-                return memoryStream;
+                allVersions.Add((packageId, version));
             }
+        }
 
-            return stream;
-        }
-        catch (PackageNotFoundException)
-        {
-            return null;
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        return allVersions;
     }
 }
