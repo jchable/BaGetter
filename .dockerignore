@@ -15,8 +15,12 @@
 # Test projects (not needed for production image)
 tests/
 
-# Documentation & deployment configs
-docs/
+# Documentation build artifacts (source is needed for DocFX build)
+docs/_site/
+docs/obj/
+docs/log/
+
+# Deployment configs
 deployment templates/
 .github/
 *.md

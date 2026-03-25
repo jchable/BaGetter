@@ -1,0 +1,30 @@
+{
+  "build": {
+    "content": [
+      {
+        "files": [
+          "**/*.md",
+          "**/toc.yml"
+        ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [
+          "images/**"
+        ]
+      }
+    ],
+    "dest": "_site",
+    "globalMetadata": {
+      "_appTitle": "BaGetter Documentation",
+      "_appFooter": "Copyright BaGetter contributors. Built with <a href=\"https://dotnet.github.io/docfx\">DocFX</a>.",
+      "_enableSearch": true,
+      "_appFaviconPath": "images/favicon.ico"
+    },
+    "template": [
+      "default",
+      "modern"
+    ]
+  }
+}

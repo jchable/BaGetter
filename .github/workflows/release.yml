@@ -53,9 +53,14 @@ jobs:
         uses: actions/setup-dotnet@v4.0.0
         with:
           global-json-file: global.json
+      - name: Build documentation
+        run: |
+          dotnet tool install -g docfx
+          docfx build docs/docfx.json
       - name: Publish
         run: |
           dotnet publish src/BaGetter --configuration Release --output artifacts --property:Version=${{ needs.version.outputs.RELEASE_VERSION }}
+          cp -r docs/_site artifacts/wwwroot/docs
           echo ${{ github.sha }} > artifacts/ReleaseSha.txt
           7z a -tzip bagetter-${{ needs.version.outputs.RELEASE_VERSION }}.zip ./artifacts/*
       - name: Generate changelog with git-cliff

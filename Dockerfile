@@ -10,6 +10,14 @@ COPY ./Directory.Packages.props ./nuget.config ./src/**/*.csproj ./
 RUN for file in $(ls *.csproj); do mkdir -p ${file%.*}/ && mv $file ${file%.*}/; done
 RUN dotnet restore BaGetter/BaGetter.csproj --arch $TARGETARCH
 
+## Build documentation with DocFX
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS docs
+WORKDIR /docs
+RUN dotnet tool install -g docfx
+ENV PATH="$PATH:/root/.dotnet/tools"
+COPY docs/ .
+RUN docfx build docfx.json
+
 ## Publish (implicitly builds)
 FROM build AS publish
 ARG Version
@@ -47,6 +55,7 @@ RUN mkdir -p /data/packages /data/symbols /data/db \
 
 WORKDIR /app
 COPY --from=publish /app .
+COPY --from=docs /docs/_site ./wwwroot/docs/
 RUN chown -R bagetter:bagetter /app
 
 USER bagetter

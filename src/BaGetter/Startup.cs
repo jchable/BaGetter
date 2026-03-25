@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Microsoft.AspNetCore.RateLimiting;
 using Serilog;
 using Serilog.Events;
@@ -10,6 +11,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using HealthCheckOptions = Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions;
@@ -127,11 +129,29 @@ public class Startup
             h["Referrer-Policy"] = "strict-origin-when-cross-origin";
             h["X-Permitted-Cross-Domain-Policies"] = "none";
             h["Content-Security-Policy"] =
-                "default-src 'self'; script-src 'self' 'unsafe-hashes'; style-src 'self'; img-src 'self' data:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'";
+                "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-hashes'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'";
             await next();
         });
 
         app.UseStaticFiles();
+
+        // Serve DocFX documentation at /docs
+        var docsPath = Path.Combine(env.ContentRootPath, "wwwroot", "docs");
+        if (Directory.Exists(docsPath))
+        {
+            var docsFileProvider = new PhysicalFileProvider(docsPath);
+            app.UseDefaultFiles(new DefaultFilesOptions
+            {
+                FileProvider = docsFileProvider,
+                RequestPath = "/docs"
+            });
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = docsFileProvider,
+                RequestPath = "/docs"
+            });
+        }
+
         app.UseRouting();
 
         app.UseCors(ConfigureBaGetterServer.CorsPolicy);

@@ -1,4 +1,4 @@
-name: Deploy Docs to GitHub Pages
+name: Build and Deploy Docs
 
 on:
   push:
@@ -11,32 +11,27 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: docs
     steps:
       - name: Checkout
         uses: actions/checkout@v4.1.1
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
-          node-version: 20
-          cache: yarn
-          cache-dependency-path: '**/yarn.lock'
+          global-json-file: global.json
 
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
+      - name: Install DocFX
+        run: dotnet tool install -g docfx
 
-      - name: Build the Docusaurus site
-        run: yarn build
+      - name: Build documentation
+        run: docfx build docs/docfx.json
 
       - name: Deploy to GitHub Pages
         if: success()
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build
+          publish_dir: docs/_site
           publish_branch: gh-pages
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'

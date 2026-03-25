@@ -1,0 +1,18 @@
+- name: nuget.org
+  href: nugetorg.md
+- name: NuGet.Server
+  href: nugetserver.md
+- name: Azure Artifacts
+  href: azure-artifacts.md
+- name: MyGet
+  href: myget.md
+- name: Artifactory
+  href: artifactory.md
+- name: LiGet
+  href: liget.md
+- name: Local Feeds
+  href: local-feeds.md
+- name: Nexus
+  href: nexus.md
+- name: TeamCity
+  href: teamcity.md

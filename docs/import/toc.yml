@@ -1,0 +1,8 @@
+- name: nuget.org
+  href: nugetorg.md
+- name: Local Feeds
+  href: local-feeds.md
+- name: MyGet
+  href: myget.md
+- name: NuGet.Server
+  href: nugetserver.md

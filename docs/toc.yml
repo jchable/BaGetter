@@ -1,0 +1,16 @@
+- name: Getting Started
+  href: index.md
+- name: Configuration
+  href: configuration.md
+- name: Installation
+  href: installation/
+  topicHref: installation/local.md
+- name: Import Packages
+  href: import/
+  topicHref: import/nugetorg.md
+- name: Advanced
+  href: advanced/
+  topicHref: advanced/sdk.md
+- name: Comparisons
+  href: comparisons/
+  topicHref: comparisons/nugetorg.md
