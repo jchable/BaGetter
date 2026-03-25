@@ -197,6 +197,9 @@ public class Program
                     // Limit upload size to 8 GiB (matches MaxPackageSizeGiB default).
                     // Can be further restricted by a reverse proxy.
                     options.Limits.MaxRequestBodySize = 8L * 1024 * 1024 * 1024;
+
+                    // Do not expose server technology in response headers
+                    options.AddServerHeader = false;
                 });
 
                 web.UseStartup<Startup>();

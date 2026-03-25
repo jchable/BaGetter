@@ -38,7 +38,7 @@
                     <td>
                         <form method="post" asp-page-handler="ChangeRole" class="d-inline">
                             <input type="hidden" name="userId" value="@entry.User.Id" />
-                            <select name="role" class="form-select form-select-sm d-inline-block" style="width: auto;" onchange="this.form.submit()">
+                            <select name="role" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
                                 @foreach (var role in new[] { Roles.Owner, Roles.Admin, Roles.Publisher, Roles.Reader })
                                 {
                                     <option value="@role" selected="@(entry.Role == role)">@role</option>

@@ -64,7 +64,8 @@ public class BaGetterEndpointBuilder
             name: Routes.UploadSymbolRouteName,
             pattern: "api/v2/symbol",
             defaults: new { controller = "Symbol", action = "Upload" },
-            constraints: new { httpMethod = new HttpMethodRouteConstraint("PUT") });
+            constraints: new { httpMethod = new HttpMethodRouteConstraint("PUT") })
+            .RequireRateLimiting("upload");
 
         endpoints.MapControllerRoute(
             name: Routes.SymbolDownloadRouteName,
@@ -95,7 +96,8 @@ public class BaGetterEndpointBuilder
         endpoints.MapControllerRoute(
             name: Routes.DependentsRouteName,
             pattern: "v3/dependents",
-            defaults: new { controller = "Search", action = "Dependents" });
+            defaults: new { controller = "Search", action = "Dependents" })
+            .RequireRateLimiting("search");
     }
 
     public void MapPackageMetadataRoutes(IEndpointRouteBuilder endpoints)

@@ -127,7 +127,7 @@ public class Startup
             h["Referrer-Policy"] = "strict-origin-when-cross-origin";
             h["X-Permitted-Cross-Domain-Policies"] = "none";
             h["Content-Security-Policy"] =
-                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'";
+                "default-src 'self'; script-src 'self' 'unsafe-hashes'; style-src 'self'; img-src 'self' data:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'";
             await next();
         });
 
