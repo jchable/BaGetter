@@ -1,0 +1,40 @@
+@page "/admin"
+@model DashboardModel
+
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<div class="container mt-4">
+    <h1>Dashboard</h1>
+
+    <div class="row mt-4">
+        <div class="col-md-4 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Users</h5>
+                    <p class="display-6">@Model.UserCount</p>
+                    <a asp-page="/Admin/Users" class="btn btn-outline-primary btn-sm">Manage</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Packages</h5>
+                    <p class="display-6">@Model.PackageCount</p>
+                    <a asp-page="/Index" class="btn btn-outline-primary btn-sm">Browse</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Pending invitations</h5>
+                    <p class="display-6">@Model.PendingInvitationCount</p>
+                    <a asp-page="/Admin/Invitations" class="btn btn-outline-primary btn-sm">Manage</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

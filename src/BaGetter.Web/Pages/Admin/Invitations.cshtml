@@ -1,0 +1,96 @@
+@page "/admin/invitations"
+@model InvitationsModel
+@using BaGetter.Core
+
+@{
+    ViewData["Title"] = "Invitations";
+}
+
+<div class="container mt-4">
+    <h1>Invitations</h1>
+
+    @if (!string.IsNullOrEmpty(Model.StatusMessage))
+    {
+        <div class="alert alert-success" role="alert">@Model.StatusMessage</div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.LastInviteUrl))
+    {
+        <div class="alert alert-info" role="alert">
+            <strong>Registration link:</strong>
+            <code class="user-select-all">@Model.LastInviteUrl</code>
+        </div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header">Send invitation</div>
+        <div class="card-body">
+            <form method="post" asp-page-handler="Invite" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label asp-for="Input.Email" class="form-label">Email</label>
+                    <input asp-for="Input.Email" class="form-control" />
+                    <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Input.Role" class="form-label">Role</label>
+                    <select asp-for="Input.Role" class="form-select">
+                        <option value="@Roles.Reader">Reader</option>
+                        <option value="@Roles.Publisher">Publisher</option>
+                        <option value="@Roles.Admin">Admin</option>
+                        <option value="@Roles.Owner">Owner</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Invite</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Invited by</th>
+                <th>Expires</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var inv in Model.InvitationList)
+            {
+                <tr>
+                    <td>@inv.Email</td>
+                    <td><span class="badge bg-secondary">@inv.Role</span></td>
+                    <td>@(inv.InvitedBy?.Email ?? "—")</td>
+                    <td>@inv.ExpiresAt.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>
+                        @if (inv.AcceptedAt != null)
+                        {
+                            <span class="badge bg-success">Accepted</span>
+                        }
+                        else if (inv.ExpiresAt < System.DateTimeOffset.UtcNow)
+                        {
+                            <span class="badge bg-warning text-dark">Expired</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-info text-dark">Pending</span>
+                        }
+                    </td>
+                    <td>
+                        @if (inv.AcceptedAt == null)
+                        {
+                            <form method="post" asp-page-handler="Revoke" class="d-inline">
+                                <input type="hidden" name="invitationId" value="@inv.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Revoke</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
