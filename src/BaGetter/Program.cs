@@ -149,6 +149,7 @@ public class Program
             var emailOpt = cmd.Option("-e|--email", "Admin email address", CommandOptionType.SingleValue).IsRequired();
             var passwordOpt = cmd.Option("-p|--password", "Admin password (min 8 chars)", CommandOptionType.SingleValue).IsRequired();
             var displayNameOpt = cmd.Option("-n|--name", "Display name (defaults to email)", CommandOptionType.SingleValue);
+            var forceOpt = cmd.Option("-f|--force", "Update password and ensure Owner role if user already exists", CommandOptionType.NoValue);
 
             cmd.OnExecuteAsync(async cancellationToken =>
             {
@@ -167,8 +168,29 @@ public class Program
                 var existing = await userManager.FindByEmailAsync(email);
                 if (existing != null)
                 {
-                    Console.Error.WriteLine($"User {email} already exists.");
-                    Environment.ExitCode = 1;
+                    if (!forceOpt.HasValue())
+                    {
+                        Console.Error.WriteLine($"User {email} already exists. Use --force to update password and ensure Owner role.");
+                        Environment.ExitCode = 1;
+                        return;
+                    }
+
+                    // Reset password
+                    var token = await userManager.GeneratePasswordResetTokenAsync(existing);
+                    var resetResult = await userManager.ResetPasswordAsync(existing, token, passwordOpt.Value()!);
+                    if (!resetResult.Succeeded)
+                    {
+                        foreach (var error in resetResult.Errors)
+                            Console.Error.WriteLine($"  {error.Description}");
+                        Environment.ExitCode = 1;
+                        return;
+                    }
+
+                    // Ensure Owner role
+                    if (!await userManager.IsInRoleAsync(existing, BaGetter.Core.Roles.Owner))
+                        await userManager.AddToRoleAsync(existing, BaGetter.Core.Roles.Owner);
+
+                    Console.WriteLine($"Admin user {email} updated: password reset and Owner role ensured.");
                     return;
                 }
 
