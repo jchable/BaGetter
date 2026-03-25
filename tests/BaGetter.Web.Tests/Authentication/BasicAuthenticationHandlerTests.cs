@@ -106,8 +106,8 @@ public class BasicAuthenticationHandlerTests
     [Fact]
     public async Task HandleAuthenticateAsync_InvalidPassword_ReturnsFail()
     {
-        _apiKeyService.Setup(s => s.IsValidAsync("wrong-key", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        _apiKeyService.Setup(s => s.ValidateAsync("wrong-key", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ApiKeyValidationResult?)null);
         var encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes("user:wrong-key"));
         _httpRequest.Setup(r => r.Headers).Returns(new HeaderDictionary
         {
@@ -124,8 +124,8 @@ public class BasicAuthenticationHandlerTests
     [Fact]
     public async Task HandleAuthenticateAsync_ValidPassword_ReturnsSuccessWithReaderRole()
     {
-        _apiKeyService.Setup(s => s.IsValidAsync("valid-api-key", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _apiKeyService.Setup(s => s.ValidateAsync("valid-api-key", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ApiKeyValidationResult { KeyId = 1, UserId = "user1", UserName = "testuser", Role = Roles.Reader, TenantId = "default" });
         var encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes("anyuser:valid-api-key"));
         _httpRequest.Setup(r => r.Headers).Returns(new HeaderDictionary
         {

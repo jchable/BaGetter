@@ -55,14 +55,19 @@ public class BasicAuthenticationHandler : AuthenticationHandler<BasicAuthenticat
         if (string.IsNullOrWhiteSpace(password))
             return AuthenticateResult.Fail("Empty credentials.");
 
-        var valid = await _apiKeyService.IsValidAsync(password, Context.RequestAborted);
-        if (!valid)
+        var result = await _apiKeyService.ValidateAsync(password, Context.RequestAborted);
+        if (result == null)
             return AuthenticateResult.Fail("Invalid credentials.");
+
+        // Basic auth grants the key's role (or Reader for config-based keys)
+        var role = string.IsNullOrEmpty(result.UserId) ? Roles.Reader : result.Role;
 
         var claims = new[]
         {
-            new Claim(ClaimTypes.Name, "basic-apikey"),
-            new Claim(ClaimTypes.Role, Roles.Reader),
+            new Claim(ClaimTypes.Name, result.UserName),
+            new Claim(ClaimTypes.NameIdentifier, result.UserId),
+            new Claim(ClaimTypes.Role, role),
+            new Claim(BaGetter.Authentication.AuthenticationConstants.TenantIdClaim, result.TenantId),
         };
         var identity = new ClaimsIdentity(claims, Scheme.Name);
         var principal = new ClaimsPrincipal(identity);

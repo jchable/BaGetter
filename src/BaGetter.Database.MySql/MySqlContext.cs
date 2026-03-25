@@ -14,7 +14,7 @@ public class MySqlContext : AbstractContext<MySqlContext>
     /// </summary>
     private const int UniqueConstraintViolationErrorCode = 1062;
 
-    public MySqlContext(DbContextOptions<MySqlContext> efOptions, IOptionsSnapshot<BaGetterOptions> bagetterOptions) : base(efOptions)
+    public MySqlContext(DbContextOptions<MySqlContext> efOptions, IOptionsSnapshot<BaGetterOptions> bagetterOptions, ITenantProvider tenantProvider = null) : base(efOptions, tenantProvider)
     {
         _bagetterOptions = bagetterOptions.Value.Database;
     }

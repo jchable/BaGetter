@@ -35,6 +35,9 @@ public class PackageIndexingServiceTests
         var retentionOptions = new Mock<IOptionsSnapshot<RetentionOptions>>(MockBehavior.Strict);
         retentionOptions.Setup(o => o.Value).Returns(_retentionOptions);
 
+        var tenantProvider = new Mock<ITenantProvider>();
+        tenantProvider.Setup(t => t.GetCurrentTenantId()).Returns("default");
+
         _target = new PackageIndexingService(
             _packages.Object,
             _storage.Object,
@@ -43,7 +46,8 @@ public class PackageIndexingServiceTests
             _time.Object,
             options.Object,
             retentionOptions.Object,
-            Mock.Of<ILogger<PackageIndexingService>>());
+            Mock.Of<ILogger<PackageIndexingService>>(),
+            tenantProvider.Object);
     }
 
     // TODO: Add malformed package tests

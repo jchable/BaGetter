@@ -12,11 +12,13 @@ public class InvitationsModel : PageModel
 {
     private readonly IInvitationService _invitationService;
     private readonly UserManager<BaGetterUser> _userManager;
+    private readonly IAuditService _audit;
 
-    public InvitationsModel(IInvitationService invitationService, UserManager<BaGetterUser> userManager)
+    public InvitationsModel(IInvitationService invitationService, UserManager<BaGetterUser> userManager, IAuditService audit)
     {
         _invitationService = invitationService;
         _userManager = userManager;
+        _audit = audit;
     }
 
     [BindProperty]
@@ -59,6 +61,13 @@ public class InvitationsModel : PageModel
             protocol: Request.Scheme);
 
         LastInviteUrl = registerUrl;
+
+        await _audit.LogAsync(AuditAction.InvitationCreated,
+            currentUserId, User.Identity?.Name,
+            "Invitation", Input.Email,
+            new { role = Input.Role },
+            HttpContext.Connection.RemoteIpAddress?.ToString());
+
         StatusMessage = $"Invitation created for {Input.Email}.";
         InvitationList = await _invitationService.GetAllAsync();
         return Page();
@@ -67,6 +76,12 @@ public class InvitationsModel : PageModel
     public async Task<IActionResult> OnPostRevokeAsync(int invitationId)
     {
         await _invitationService.RevokeAsync(invitationId);
+
+        await _audit.LogAsync(AuditAction.InvitationRevoked,
+            _userManager.GetUserId(User), User.Identity?.Name,
+            "Invitation", invitationId.ToString(), null,
+            HttpContext.Connection.RemoteIpAddress?.ToString());
+
         StatusMessage = "Invitation revoked.";
         InvitationList = await _invitationService.GetAllAsync();
         return Page();

@@ -1,9 +1,11 @@
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
+using System.Threading.Channels;
 using BaGetter.Core.Statistics;
 using BaGetter.Protocol;
 using Microsoft.Extensions.Configuration;
@@ -95,6 +97,7 @@ public static partial class DependencyInjectionExtensions
 
         services.TryAddScoped<IApiKeyService, ApiKeyService>();
         services.TryAddScoped<IInvitationService, InvitationService>();
+        services.TryAddScoped<IAuditService, AuditService>();
         services.TryAddTransient<IPackageContentService, DefaultPackageContentService>();
         services.TryAddTransient<IPackageDeletionService, PackageDeletionService>();
         services.TryAddTransient<IPackageIndexingService, PackageIndexingService>();
@@ -116,6 +119,18 @@ public static partial class DependencyInjectionExtensions
         services.TryAddTransient<PackageDatabase>();
 
         services.TryAddTransient(UpstreamClientFactory);
+
+        // Feed import services
+        services.TryAddTransient<IFeedImportService, FeedImportService>();
+        services.AddSingleton<FeedImportProgressTracker>();
+        services.AddSingleton(Channel.CreateBounded<FeedImportJob>(new BoundedChannelOptions(1)
+        {
+            FullMode = BoundedChannelFullMode.Wait,
+        }));
+        services.AddHostedService<FeedImportBackgroundService>();
+        services.AddSingleton(sp => sp.GetServices<Microsoft.Extensions.Hosting.IHostedService>()
+            .OfType<FeedImportBackgroundService>()
+            .Single());
     }
 
     private static void AddDefaultProviders(this IServiceCollection services)

@@ -46,6 +46,48 @@ public class Program
                     await importer.ImportAsync(cancellationToken);
                 });
             });
+
+            import.Command("feed", feed =>
+            {
+                feed.Description = "Import all packages from a remote NuGet feed";
+
+                var sourceOpt = feed.Option("-s|--source", "Remote feed URL (v2 or v3 service index)", CommandOptionType.SingleValue).IsRequired();
+                var apiKeyOpt = feed.Option("-k|--api-key", "API key for the remote feed", CommandOptionType.SingleValue);
+                var legacyOpt = feed.Option("--legacy", "Use legacy NuGet v2 protocol", CommandOptionType.NoValue);
+
+                feed.OnExecuteAsync(async cancellationToken =>
+                {
+                    var feedUrl = sourceOpt.Value();
+                    if (!Uri.TryCreate(feedUrl, UriKind.Absolute, out var feedUri))
+                    {
+                        Console.Error.WriteLine($"Invalid feed URL: {feedUrl}");
+                        Environment.ExitCode = 1;
+                        return;
+                    }
+
+                    var options = new FeedImportOptions
+                    {
+                        FeedUrl = feedUri,
+                        Legacy = legacyOpt.HasValue(),
+                        ApiKey = apiKeyOpt.Value(),
+                    };
+
+                    using var scope = host.Services.CreateScope();
+                    var importService = scope.ServiceProvider.GetRequiredService<IFeedImportService>();
+
+                    var progress = new Progress<FeedImportProgress>(p =>
+                    {
+                        var processed = p.Imported + p.Skipped + p.Failed;
+                        var total = p.TotalVersions > 0 ? p.TotalVersions.ToString() : "?";
+                        Console.Write($"\r  [{processed}/{total}] {p.CurrentPackage ?? ""}".PadRight(80));
+                    });
+
+                    Console.WriteLine($"Importing from {feedUrl}...");
+                    var result = await importService.ImportAsync(options, progress, cancellationToken);
+                    Console.WriteLine();
+                    Console.WriteLine($"Import {result}.");
+                });
+            });
         });
 
         app.Command("deprecate", cmd =>
@@ -130,12 +172,30 @@ public class Program
                     return;
                 }
 
+                // Ensure default tenant exists
+                var context = scope.ServiceProvider.GetRequiredService<BaGetter.Core.IContext>();
+                var defaultTenant = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
+                    .FirstOrDefaultAsync(context.Tenants, t => t.Slug == "default", cancellationToken);
+                if (defaultTenant == null)
+                {
+                    defaultTenant = new BaGetter.Core.Tenant
+                    {
+                        Id = "default",
+                        Name = "Default",
+                        Slug = "default",
+                    };
+                    context.Tenants.Add(defaultTenant);
+                    await context.SaveChangesAsync(cancellationToken);
+                    Console.WriteLine("Default tenant created.");
+                }
+
                 var user = new BaGetter.Core.BaGetterUser
                 {
                     UserName = email,
                     Email = email,
                     DisplayName = displayNameOpt.Value() ?? email,
                     EmailConfirmed = true,
+                    TenantId = defaultTenant.Id,
                 };
 
                 var result = await userManager.CreateAsync(user, passwordOpt.Value()!);
@@ -158,6 +218,7 @@ public class Program
         {
             await host.RunMigrationsAsync(cancellationToken);
             await host.SeedRolesAsync(cancellationToken);
+            await host.SeedDefaultTenantAsync(cancellationToken);
             await host.RunAsync(cancellationToken);
         });
 

@@ -99,12 +99,13 @@ public class ExternalLoginModel : PageModel
         var user = await _userManager.FindByEmailAsync(Input.Email);
         if (user == null)
         {
-            // Create new user — only if email matches an accepted invitation
+            // Create new user with default tenant
             user = new BaGetterUser
             {
                 UserName = Input.Email,
                 Email = Input.Email,
                 DisplayName = info.Principal.FindFirstValue(ClaimTypes.Name) ?? Input.Email,
+                TenantId = "default",
             };
 
             var createResult = await _userManager.CreateAsync(user);

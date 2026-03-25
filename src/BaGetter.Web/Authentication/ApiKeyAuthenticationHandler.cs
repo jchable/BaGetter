@@ -10,7 +10,7 @@ namespace BaGetter.Web.Authentication;
 
 /// <summary>
 /// Handles NuGet API key authentication via the X-NuGet-ApiKey header.
-/// Used exclusively for package push/delete operations from NuGet CLI tools.
+/// Used for package push/delete operations from NuGet CLI tools.
 /// </summary>
 public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthenticationOptions>
 {
@@ -35,14 +35,21 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
         if (string.IsNullOrWhiteSpace(apiKey))
             return AuthenticateResult.NoResult();
 
-        var valid = await _apiKeyService.IsValidAsync(apiKey, Context.RequestAborted);
-        if (!valid)
+        var result = await _apiKeyService.ValidateAsync(apiKey, Context.RequestAborted);
+        if (result == null)
         {
             Logger.LogWarning("Invalid API key attempt from {RemoteIP}", Context.Connection?.RemoteIpAddress);
             return AuthenticateResult.Fail("Invalid API key");
         }
 
-        var claims = new[] { new Claim(ClaimTypes.Name, "apikey"), new Claim(ClaimTypes.Role, Roles.Publisher) };
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.Name, result.UserName),
+            new Claim(ClaimTypes.NameIdentifier, result.UserId),
+            new Claim(ClaimTypes.Role, result.Role),
+            new Claim("apikey", "true"),
+            new Claim(BaGetter.Authentication.AuthenticationConstants.TenantIdClaim, result.TenantId),
+        };
         var identity = new ClaimsIdentity(claims, Scheme.Name);
         var principal = new ClaimsPrincipal(identity);
         return AuthenticateResult.Success(new AuthenticationTicket(principal, Scheme.Name));

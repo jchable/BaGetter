@@ -17,8 +17,8 @@ public class SqliteContext : AbstractContext<SqliteContext>
     /// </summary>
     private const int SqliteUniqueConstraintViolationErrorCode = 19;
 
-    public SqliteContext(DbContextOptions<SqliteContext> efOptions, IOptionsSnapshot<BaGetterOptions> bagetterOptions)
-        : base(efOptions)
+    public SqliteContext(DbContextOptions<SqliteContext> efOptions, IOptionsSnapshot<BaGetterOptions> bagetterOptions, ITenantProvider tenantProvider = null)
+        : base(efOptions, tenantProvider)
     {
         _bagetterOptions = bagetterOptions.Value.Database;
     }

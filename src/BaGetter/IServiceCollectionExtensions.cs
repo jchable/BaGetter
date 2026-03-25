@@ -31,7 +31,8 @@ internal static class IServiceCollectionExtensions
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.AllowedForNewUsers = true;
             })
-            .AddDefaultTokenProviders();
+            .AddDefaultTokenProviders()
+            .AddClaimsPrincipalFactory<BaGetterClaimsPrincipalFactory>();
 
         // Cookie scheme (default for browser — redirects to /account/login on 401)
         app.Services.ConfigureApplicationCookie(opts =>
@@ -127,7 +128,7 @@ internal static class IServiceCollectionExtensions
                     AuthenticationConstants.BasicScheme,
                     IdentityConstants.ApplicationScheme);
                 policy.RequireAssertion(ctx =>
-                    ctx.User.HasClaim(c => c.Type == System.Security.Claims.ClaimTypes.Name && c.Value == "apikey") ||
+                    ctx.User.HasClaim("apikey", "true") ||
                     ctx.User.IsInRole(Roles.Publisher) ||
                     ctx.User.IsInRole(Roles.Admin) ||
                     ctx.User.IsInRole(Roles.Owner));

@@ -22,11 +22,18 @@ public abstract class AbstractContext<TContext> : IdentityDbContext<BaGetterUser
 
     public const int MaxPackageDependencyVersionRangeLength = 256;
 
-    protected AbstractContext(DbContextOptions<TContext> efOptions)
-        : base(efOptions)
-    { }
+    private readonly string? _tenantId;
 
+    protected AbstractContext(DbContextOptions<TContext> efOptions, ITenantProvider? tenantProvider = null)
+        : base(efOptions)
+    {
+        _tenantId = tenantProvider?.GetCurrentTenantId();
+    }
+
+    public DbSet<Tenant> Tenants { get; set; }
     public DbSet<UserInvitation> UserInvitations { get; set; }
+    public DbSet<AuditLog> AuditLogs { get; set; }
+    public DbSet<ApiKeyEntity> ApiKeys { get; set; }
 
     public DbSet<Package> Packages { get; set; }
     public DbSet<PackageDependency> PackageDependencies { get; set; }
@@ -46,19 +53,31 @@ public abstract class AbstractContext<TContext> : IdentityDbContext<BaGetterUser
     {
         base.OnModelCreating(builder);
 
+        builder.Entity<Tenant>(BuildTenantEntity);
         builder.Entity<Package>(BuildPackageEntity);
         builder.Entity<PackageDependency>(BuildPackageDependencyEntity);
         builder.Entity<PackageType>(BuildPackageTypeEntity);
         builder.Entity<TargetFramework>(BuildTargetFrameworkEntity);
         builder.Entity<UserInvitation>(BuildUserInvitationEntity);
+        builder.Entity<AuditLog>(BuildAuditLogEntity);
+        builder.Entity<ApiKeyEntity>(BuildApiKeyEntity);
     }
 
     private void BuildPackageEntity(EntityTypeBuilder<Package> package)
     {
         package.HasKey(p => p.Key);
         package.HasIndex(p => p.Id);
-        package.HasIndex(p => new { p.Id, p.NormalizedVersionString })
+        package.HasIndex(p => new { p.TenantId, p.Id, p.NormalizedVersionString })
             .IsUnique();
+
+        // Global query filter: when _tenantId is set, only return packages for that tenant
+        package.HasQueryFilter(p => _tenantId == null || p.TenantId == _tenantId);
+
+        package.Property(p => p.TenantId).HasMaxLength(450).IsRequired();
+        package.HasOne(p => p.Tenant)
+            .WithMany()
+            .HasForeignKey(p => p.TenantId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         package.Property(p => p.Id)
             .HasMaxLength(MaxPackageIdLength)
@@ -162,6 +181,50 @@ public abstract class AbstractContext<TContext> : IdentityDbContext<BaGetterUser
         targetFramework.HasIndex(f => f.Moniker);
 
         targetFramework.Property(f => f.Moniker).HasMaxLength(MaxTargetFrameworkLength);
+    }
+
+    private static void BuildTenantEntity(EntityTypeBuilder<Tenant> tenant)
+    {
+        tenant.HasKey(t => t.Id);
+        tenant.HasIndex(t => t.Slug).IsUnique();
+
+        tenant.Property(t => t.Id).HasMaxLength(450);
+        tenant.Property(t => t.Name).HasMaxLength(256).IsRequired();
+        tenant.Property(t => t.Slug).HasMaxLength(128).IsRequired();
+    }
+
+    private static void BuildApiKeyEntity(EntityTypeBuilder<ApiKeyEntity> key)
+    {
+        key.HasKey(k => k.Id);
+        key.HasIndex(k => k.KeyHash).IsUnique();
+        key.HasIndex(k => k.UserId);
+
+        key.Property(k => k.Name).HasMaxLength(256).IsRequired();
+        key.Property(k => k.KeyHash).HasMaxLength(64).IsRequired();
+        key.Property(k => k.KeyPrefix).HasMaxLength(8).IsRequired();
+        key.Property(k => k.Role).HasMaxLength(64).IsRequired();
+        key.Property(k => k.UserId).HasMaxLength(450).IsRequired();
+
+        key.HasOne(k => k.User)
+            .WithMany()
+            .HasForeignKey(k => k.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+
+    private static void BuildAuditLogEntity(EntityTypeBuilder<AuditLog> audit)
+    {
+        audit.HasKey(a => a.Id);
+        audit.HasIndex(a => a.Timestamp);
+        audit.HasIndex(a => a.UserId);
+        audit.HasIndex(a => a.Action);
+
+        audit.Property(a => a.Action).HasMaxLength(128).IsRequired();
+        audit.Property(a => a.UserName).HasMaxLength(256);
+        audit.Property(a => a.UserId).HasMaxLength(450);
+        audit.Property(a => a.ResourceType).HasMaxLength(128);
+        audit.Property(a => a.ResourceId).HasMaxLength(512);
+        audit.Property(a => a.Details).HasMaxLength(DefaultMaxStringLength);
+        audit.Property(a => a.IpAddress).HasMaxLength(45);
     }
 
     private static void BuildUserInvitationEntity(EntityTypeBuilder<UserInvitation> invitation)

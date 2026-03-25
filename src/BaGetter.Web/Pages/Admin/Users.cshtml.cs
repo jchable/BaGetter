@@ -12,10 +12,12 @@ namespace BaGetter.Web.Admin;
 public class UsersModel : PageModel
 {
     private readonly UserManager<BaGetterUser> _userManager;
+    private readonly IAuditService _audit;
 
-    public UsersModel(UserManager<BaGetterUser> userManager)
+    public UsersModel(UserManager<BaGetterUser> userManager, IAuditService audit)
     {
         _userManager = userManager;
+        _audit = audit;
     }
 
     public IList<UserWithRole> UserList { get; set; } = new List<UserWithRole>();
@@ -55,8 +57,15 @@ public class UsersModel : PageModel
         }
 
         var currentRoles = await _userManager.GetRolesAsync(user);
+        var oldRole = currentRoles.FirstOrDefault() ?? "None";
         await _userManager.RemoveFromRolesAsync(user, currentRoles);
         await _userManager.AddToRoleAsync(user, role);
+
+        await _audit.LogAsync(AuditAction.RoleChanged,
+            _userManager.GetUserId(User), User.Identity?.Name,
+            "User", user.Email,
+            new { targetUserId = userId, oldRole, newRole = role },
+            HttpContext.Connection.RemoteIpAddress?.ToString());
 
         StatusMessage = $"Role updated to {role} for {user.Email}.";
         await OnGetAsync();
@@ -83,6 +92,12 @@ public class UsersModel : PageModel
         }
 
         await _userManager.DeleteAsync(user);
+
+        await _audit.LogAsync(AuditAction.UserDeleted,
+            _userManager.GetUserId(User), User.Identity?.Name,
+            "User", user.Email, null,
+            HttpContext.Connection.RemoteIpAddress?.ToString());
+
         StatusMessage = $"User {user.Email} deleted.";
         await OnGetAsync();
         return Page();

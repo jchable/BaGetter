@@ -33,6 +33,7 @@ public static class IServiceCollectionExtensions
         });
 
         services.AddHttpContextAccessor();
+        services.AddScoped<ITenantProvider, BaGetter.Web.Services.HttpContextTenantProvider>();
         services.AddTransient<IUrlGenerator, BaGetterUrlGenerator>();
 
         services.AddSingleton(ApplicationVersionHelper.GetVersion());

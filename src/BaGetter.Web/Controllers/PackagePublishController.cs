@@ -22,6 +22,7 @@ public class PackagePublishController : Controller
     private readonly IPackageDeletionService _deleteService;
     private readonly IPackageDeprecationService _deprecations;
     private readonly IOptionsSnapshot<BaGetterOptions> _options;
+    private readonly IAuditService _audit;
     private readonly ILogger<PackagePublishController> _logger;
 
     public PackagePublishController(
@@ -30,6 +31,7 @@ public class PackagePublishController : Controller
         IPackageDeletionService deletionService,
         IPackageDeprecationService deprecations,
         IOptionsSnapshot<BaGetterOptions> options,
+        IAuditService audit,
         ILogger<PackagePublishController> logger)
     {
         ArgumentNullException.ThrowIfNull(indexer);
@@ -37,12 +39,14 @@ public class PackagePublishController : Controller
         ArgumentNullException.ThrowIfNull(deletionService);
         ArgumentNullException.ThrowIfNull(deprecations);
         ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(audit);
         ArgumentNullException.ThrowIfNull(logger);
         _indexer = indexer;
         _packages = packages;
         _deleteService = deletionService;
         _deprecations = deprecations;
         _options = options;
+        _audit = audit;
         _logger = logger;
     }
 
@@ -79,6 +83,10 @@ public class PackagePublishController : Controller
                 case PackageIndexingResult.Success:
                     _logger.LogInformation("Package uploaded by {User} from {RemoteIP}",
                         User.Identity?.Name ?? "unknown", HttpContext.Connection.RemoteIpAddress);
+                    await _audit.LogAsync(AuditAction.PackagePushed,
+                        User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                        User.Identity?.Name, "Package", null, null,
+                        HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
                     HttpContext.Response.StatusCode = 201;
                     break;
             }
@@ -103,6 +111,10 @@ public class PackagePublishController : Controller
         {
             _logger.LogInformation("Package {PackageId} {PackageVersion} deleted by {User} from {RemoteIP}",
                 id, nugetVersion, User.Identity?.Name ?? "unknown", HttpContext.Connection.RemoteIpAddress);
+            await _audit.LogAsync(AuditAction.PackageDeleted,
+                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                User.Identity?.Name, "Package", $"{id}/{nugetVersion}", null,
+                HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
             return NoContent();
         }
 
@@ -122,6 +134,10 @@ public class PackagePublishController : Controller
         {
             _logger.LogInformation("Package {PackageId} {PackageVersion} relisted by {User} from {RemoteIP}",
                 id, nugetVersion, User.Identity?.Name ?? "unknown", HttpContext.Connection.RemoteIpAddress);
+            await _audit.LogAsync(AuditAction.PackageRelisted,
+                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                User.Identity?.Name, "Package", $"{id}/{nugetVersion}", null,
+                HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
             return Ok();
         }
 

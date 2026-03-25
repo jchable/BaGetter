@@ -9,9 +9,15 @@ public interface IContext
 {
     DatabaseFacade Database { get; }
 
+    DbSet<Tenant> Tenants { get; set; }
+
     DbSet<Package> Packages { get; set; }
 
     DbSet<UserInvitation> UserInvitations { get; set; }
+
+    DbSet<AuditLog> AuditLogs { get; set; }
+
+    DbSet<ApiKeyEntity> ApiKeys { get; set; }
 
     /// <summary>
     /// Check whether a <see cref="DbUpdateException"/> is due to a SQL unique constraint violation.

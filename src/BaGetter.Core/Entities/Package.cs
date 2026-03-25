@@ -12,6 +12,10 @@ public class Package
 {
     public int Key { get; set; }
 
+    public string TenantId { get; set; } = string.Empty;
+
+    public Tenant? Tenant { get; set; }
+
     public string Id { get; set; }
 
     public NuGetVersion Version

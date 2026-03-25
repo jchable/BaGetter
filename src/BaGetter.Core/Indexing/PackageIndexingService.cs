@@ -18,6 +18,7 @@ public class PackageIndexingService : IPackageIndexingService
     private readonly IOptionsSnapshot<RetentionOptions> _retentionOptions;
     private readonly ILogger<PackageIndexingService> _logger;
     private readonly IPackageDeletionService _packageDeletionService;
+    private readonly ITenantProvider _tenantProvider;
 
     public PackageIndexingService(
         IPackageDatabase packages,
@@ -27,7 +28,8 @@ public class PackageIndexingService : IPackageIndexingService
         SystemTime time,
         IOptionsSnapshot<BaGetterOptions> options,
         IOptionsSnapshot<RetentionOptions> retentionOptions,
-        ILogger<PackageIndexingService> logger)
+        ILogger<PackageIndexingService> logger,
+        ITenantProvider tenantProvider)
     {
         ArgumentNullException.ThrowIfNull(packages);
         ArgumentNullException.ThrowIfNull(storage);
@@ -37,6 +39,7 @@ public class PackageIndexingService : IPackageIndexingService
         ArgumentNullException.ThrowIfNull(retentionOptions);
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(packageDeletionService);
+        ArgumentNullException.ThrowIfNull(tenantProvider);
         _packages = packages;
         _storage = storage;
         _search = search;
@@ -45,6 +48,7 @@ public class PackageIndexingService : IPackageIndexingService
         _retentionOptions = retentionOptions;
         _logger = logger;
         _packageDeletionService = packageDeletionService;
+        _tenantProvider = tenantProvider;
 #pragma warning disable CS0618 // Type or member is obsolete
         if (_options.Value.MaxVersionsPerPackage > 0)
         {
@@ -66,6 +70,8 @@ public class PackageIndexingService : IPackageIndexingService
             using var packageReader = new PackageArchiveReader(packageStream, leaveStreamOpen: true);
             package = packageReader.GetPackageMetadata();
             package.Published = _time.UtcNow;
+            package.TenantId = _tenantProvider.GetCurrentTenantId()
+                ?? throw new InvalidOperationException("No tenant context for package indexing.");
 
             // Validate package entries to prevent zip-slip and malformed archives
             await packageReader.ValidatePackageEntriesAsync(cancellationToken);

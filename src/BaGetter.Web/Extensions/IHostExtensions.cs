@@ -1,8 +1,10 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BaGetter.Core;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -51,6 +53,27 @@ public static class IHostExtensions
             {
                 await roleManager.CreateAsync(new BaGetterRole { Name = roleName });
             }
+        }
+    }
+
+    public static async Task SeedDefaultTenantAsync(
+        this IHost host,
+        CancellationToken cancellationToken = default)
+    {
+        using var scope = host.Services.CreateScope();
+        var ctx = scope.ServiceProvider.GetService<IContext>();
+        if (ctx == null) return;
+
+        var exists = await ctx.Tenants.AnyAsync(t => t.Slug == "default", cancellationToken);
+        if (!exists)
+        {
+            ctx.Tenants.Add(new Tenant
+            {
+                Id = "default",
+                Name = "Default",
+                Slug = "default",
+            });
+            await ctx.SaveChangesAsync(cancellationToken);
         }
     }
 

@@ -10,5 +10,9 @@ public class BaGetterUser : IdentityUser
     /// <summary>Id of the user who invited this user. Null for the first admin (self-created).</summary>
     public string? InvitedById { get; set; }
 
+    public string TenantId { get; set; } = string.Empty;
+
+    public Tenant? Tenant { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }

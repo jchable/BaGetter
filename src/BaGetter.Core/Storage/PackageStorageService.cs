@@ -18,15 +18,19 @@ public class PackageStorageService : IPackageStorageService
     private const string IconContentType = "image/xyz";
 
     private readonly IStorageService _storage;
+    private readonly ITenantProvider _tenantProvider;
     private readonly ILogger<PackageStorageService> _logger;
 
     public PackageStorageService(
         IStorageService storage,
+        ITenantProvider tenantProvider,
         ILogger<PackageStorageService> logger)
     {
         ArgumentNullException.ThrowIfNull(storage);
+        ArgumentNullException.ThrowIfNull(tenantProvider);
         ArgumentNullException.ThrowIfNull(logger);
         _storage = storage;
+        _tenantProvider = tenantProvider;
         _logger = logger;
     }
 
@@ -216,10 +220,18 @@ public class PackageStorageService : IPackageStorageService
         }
     }
 
+    private string TenantPrefix()
+    {
+        var tenantId = _tenantProvider.GetCurrentTenantId();
+        return tenantId != null
+            ? Path.Combine(tenantId, PackagesPathPrefix)
+            : PackagesPathPrefix;
+    }
+
     private string PackagePath(string lowercasedId, string lowercasedNormalizedVersion)
     {
         return Path.Combine(
-            PackagesPathPrefix,
+            TenantPrefix(),
             lowercasedId,
             lowercasedNormalizedVersion,
             $"{lowercasedId}.{lowercasedNormalizedVersion}.nupkg");
@@ -228,7 +240,7 @@ public class PackageStorageService : IPackageStorageService
     private string NuspecPath(string lowercasedId, string lowercasedNormalizedVersion)
     {
         return Path.Combine(
-            PackagesPathPrefix,
+            TenantPrefix(),
             lowercasedId,
             lowercasedNormalizedVersion,
             $"{lowercasedId}.nuspec");
@@ -237,7 +249,7 @@ public class PackageStorageService : IPackageStorageService
     private string ReadmePath(string lowercasedId, string lowercasedNormalizedVersion)
     {
         return Path.Combine(
-            PackagesPathPrefix,
+            TenantPrefix(),
             lowercasedId,
             lowercasedNormalizedVersion,
             "readme");
@@ -246,7 +258,7 @@ public class PackageStorageService : IPackageStorageService
     private string IconPath(string lowercasedId, string lowercasedNormalizedVersion)
     {
         return Path.Combine(
-            PackagesPathPrefix,
+            TenantPrefix(),
             lowercasedId,
             lowercasedNormalizedVersion,
             "icon");

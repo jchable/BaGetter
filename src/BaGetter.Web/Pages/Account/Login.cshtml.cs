@@ -13,10 +13,12 @@ namespace BaGetter.Web.Account;
 public class LoginModel : PageModel
 {
     private readonly SignInManager<BaGetterUser> _signInManager;
+    private readonly IAuditService _audit;
 
-    public LoginModel(SignInManager<BaGetterUser> signInManager)
+    public LoginModel(SignInManager<BaGetterUser> signInManager, IAuditService audit)
     {
         _signInManager = signInManager;
+        _audit = audit;
     }
 
     [BindProperty]
@@ -61,16 +63,27 @@ public class LoginModel : PageModel
         var result = await _signInManager.PasswordSignInAsync(
             Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
 
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+
         if (result.Succeeded)
+        {
+            var user = await _signInManager.UserManager.FindByEmailAsync(Input.Email);
+            await _audit.LogAsync(AuditAction.LoginSuccess, user?.Id, Input.Email,
+                ipAddress: ip);
             return LocalRedirect(returnUrl);
+        }
 
         if (result.IsLockedOut)
         {
+            await _audit.LogAsync(AuditAction.LoginFailure, null, Input.Email,
+                details: new { reason = "LockedOut" }, ipAddress: ip);
             ModelState.AddModelError(string.Empty, "Account locked. Please try again later.");
             OAuthProviders = await GetExternalProvidersAsync();
             return Page();
         }
 
+        await _audit.LogAsync(AuditAction.LoginFailure, null, Input.Email,
+            details: new { reason = "InvalidCredentials" }, ipAddress: ip);
         ModelState.AddModelError(string.Empty, "Invalid email or password.");
         OAuthProviders = await GetExternalProvidersAsync();
         return Page();

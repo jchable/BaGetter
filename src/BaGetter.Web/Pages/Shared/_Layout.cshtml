@@ -66,7 +66,14 @@
                                     <li><a class="dropdown-item" asp-page="/Account/Manage">My account</a></li>
                                     @if (User.IsInRole("Admin") || User.IsInRole("Owner"))
                                     {
-                                        <li><a class="dropdown-item" asp-page="/Admin/Dashboard">Admin</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><h6 class="dropdown-header">Admin</h6></li>
+                                        <li><a class="dropdown-item" asp-page="/Admin/Dashboard">Dashboard</a></li>
+                                        <li><a class="dropdown-item" asp-page="/Admin/Users">Users</a></li>
+                                        <li><a class="dropdown-item" asp-page="/Admin/Invitations">Invitations</a></li>
+                                        <li><a class="dropdown-item" asp-page="/Admin/ApiKeys">API Keys</a></li>
+                                        <li><a class="dropdown-item" asp-page="/Admin/Tenants">Tenants</a></li>
+                                        <li><a class="dropdown-item" asp-page="/Admin/AuditLog">Audit Log</a></li>
                                     }
                                     <li><hr class="dropdown-divider"></li>
                                     <li>

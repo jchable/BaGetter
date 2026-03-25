@@ -32,7 +32,10 @@ public class PackageIndexingServiceInMemoryTests
     {
         _packages = new InMemoryPackageDatabase();
         var storageService = new NullStorageService();
-        _storage = new PackageStorageService(storageService, Mock.Of<ILogger<PackageStorageService>>());
+        var tenantProvider = new Mock<ITenantProvider>();
+        tenantProvider.Setup(t => t.GetCurrentTenantId()).Returns("default");
+
+        _storage = new PackageStorageService(storageService, tenantProvider.Object, Mock.Of<ILogger<PackageStorageService>>());
 
         _search = new Mock<ISearchIndexer>(MockBehavior.Strict);
         _options = new();
@@ -62,7 +65,8 @@ public class PackageIndexingServiceInMemoryTests
             _time.Object,
             options.Object,
             retentionOptions.Object,
-            Mock.Of<ILogger<PackageIndexingService>>());
+            Mock.Of<ILogger<PackageIndexingService>>(),
+            tenantProvider.Object);
     }
 
     // TODO: Add malformed package tests

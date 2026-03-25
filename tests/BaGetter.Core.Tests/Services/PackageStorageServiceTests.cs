@@ -331,7 +331,7 @@ public class PackageStorageServiceTests
         public FactsBase()
         {
             _storage = new Mock<IStorageService>();
-            _target = new PackageStorageService(_storage.Object, Mock.Of<ILogger<PackageStorageService>>());
+            _target = new PackageStorageService(_storage.Object, Mock.Of<ITenantProvider>(), Mock.Of<ILogger<PackageStorageService>>());
 
             _puts = new Dictionary<string, (Stream Content, string ContentType)>();
         }

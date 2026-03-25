@@ -17,8 +17,8 @@ public class PostgreSqlContext : AbstractContext<PostgreSqlContext>
     /// </summary>
     private const int UniqueConstraintViolationErrorCode = 23505;
 
-    public PostgreSqlContext(DbContextOptions<PostgreSqlContext> efOptions, IOptionsSnapshot<BaGetterOptions> bagetterOptions)
-        : base(efOptions)
+    public PostgreSqlContext(DbContextOptions<PostgreSqlContext> efOptions, IOptionsSnapshot<BaGetterOptions> bagetterOptions, ITenantProvider tenantProvider = null)
+        : base(efOptions, tenantProvider)
     {
         _bagetterOptions = bagetterOptions.Value.Database;
     }

@@ -10,9 +10,15 @@ public class NullContext : IContext
 {
     public DatabaseFacade Database => throw new NotImplementedException();
 
+    public DbSet<Tenant> Tenants { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
     public DbSet<Package> Packages { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
     public DbSet<UserInvitation> UserInvitations { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+    public DbSet<AuditLog> AuditLogs { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+    public DbSet<ApiKeyEntity> ApiKeys { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
     public bool SupportsLimitInSubqueries => throw new NotImplementedException();
 

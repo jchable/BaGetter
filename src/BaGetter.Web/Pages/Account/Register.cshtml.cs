@@ -83,12 +83,17 @@ public class RegisterModel : PageModel
             return Page();
         }
 
+        // Inherit tenant from the inviter
+        var inviter = await _userManager.FindByIdAsync(invitation.InvitedById);
+        var tenantId = inviter?.TenantId ?? "default";
+
         var user = new BaGetterUser
         {
             UserName = invitation.Email,
             Email = invitation.Email,
             DisplayName = Input.DisplayName,
             InvitedById = invitation.InvitedById,
+            TenantId = tenantId,
         };
 
         var result = await _userManager.CreateAsync(user, Input.Password);

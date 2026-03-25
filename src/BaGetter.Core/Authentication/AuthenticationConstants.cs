@@ -10,6 +10,9 @@ public static class AuthenticationConstants
     // Combined scheme list for controller attributes
     public const string AllSchemes = ApiKeyScheme + "," + BasicScheme + "," + CookieScheme;
 
+    // Claims
+    public const string TenantIdClaim = "TenantId";
+
     // Policies
     public const string PolicyCanRead = "CanRead";
     public const string PolicyCanPublish = "CanPublish";

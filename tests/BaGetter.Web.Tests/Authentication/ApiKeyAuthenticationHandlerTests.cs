@@ -73,8 +73,8 @@ public class ApiKeyAuthenticationHandlerTests
     [Fact]
     public async Task HandleAuthenticateAsync_InvalidApiKey_ReturnsFailResult()
     {
-        _apiKeyService.Setup(s => s.IsValidAsync("bad-key", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        _apiKeyService.Setup(s => s.ValidateAsync("bad-key", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ApiKeyValidationResult?)null);
         _httpRequest.Setup(r => r.Headers).Returns(new HeaderDictionary
         {
             { "X-NuGet-ApiKey", new StringValues("bad-key") }
@@ -90,8 +90,8 @@ public class ApiKeyAuthenticationHandlerTests
     [Fact]
     public async Task HandleAuthenticateAsync_ValidApiKey_ReturnsSuccessWithPublisherRole()
     {
-        _apiKeyService.Setup(s => s.IsValidAsync("valid-key", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _apiKeyService.Setup(s => s.ValidateAsync("valid-key", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ApiKeyValidationResult { KeyId = 1, UserId = "user1", UserName = "testuser", Role = Roles.Publisher, TenantId = "default" });
         _httpRequest.Setup(r => r.Headers).Returns(new HeaderDictionary
         {
             { "X-NuGet-ApiKey", new StringValues("valid-key") }
