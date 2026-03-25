@@ -8,7 +8,6 @@ using BaGetter.Core.Extensions;
 using BaGetter.Web;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
@@ -36,6 +35,15 @@ public class Startup
         services.AddBaGetterOptions<IISServerOptions>(nameof(IISServerOptions));
         services.AddBaGetterWebApplication(ConfigureBaGetterApplication);
 
+        // Anti-forgery for SPA: emit XSRF-TOKEN cookie, validate X-XSRF-TOKEN header
+        services.AddAntiforgery(options =>
+        {
+            options.HeaderName = "X-XSRF-TOKEN";
+            options.Cookie.Name = "XSRF-TOKEN";
+            options.Cookie.HttpOnly = false; // SPA JS must read the cookie
+            options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict;
+        });
+
         // You can swap between implementations of subsystems like storage and search using BaGetter's configuration.
         // Each subsystem's implementation has a provider that reads the configuration to determine if it should be
         // activated. BaGetter will run through all its providers until it finds one that is active.
@@ -44,8 +52,6 @@ public class Startup
         services.AddTransient(DependencyInjectionExtensions.GetServiceFromProviders<IPackageDatabase>);
         services.AddTransient(DependencyInjectionExtensions.GetServiceFromProviders<ISearchService>);
         services.AddTransient(DependencyInjectionExtensions.GetServiceFromProviders<ISearchIndexer>);
-
-        services.AddSingleton<IConfigureOptions<MvcRazorRuntimeCompilationOptions>, ConfigureRazorRuntimeCompilation>();
 
         services.AddHealthChecks();
 
@@ -129,7 +135,7 @@ public class Startup
             h["Referrer-Policy"] = "strict-origin-when-cross-origin";
             h["X-Permitted-Cross-Domain-Policies"] = "none";
             h["Content-Security-Policy"] =
-                "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-hashes'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'";
+                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'";
             await next();
         });
 
@@ -162,11 +168,19 @@ public class Startup
 
         app.UseOperationCancelledMiddleware();
 
-        app.UseEndpoints(endpoints =>
+        // Emit XSRF-TOKEN cookie on every response so the SPA can read it
+        app.Use(async (context, next) =>
         {
-            var baget = new BaGetterEndpointBuilder();
-
-            baget.MapEndpoints(endpoints);
+            var antiforgery = context.RequestServices.GetRequiredService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>();
+            var tokens = antiforgery.GetAndStoreTokens(context);
+            context.Response.Cookies.Append("XSRF-TOKEN", tokens.RequestToken!,
+                new Microsoft.AspNetCore.Http.CookieOptions
+                {
+                    HttpOnly = false,
+                    SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict,
+                    Secure = context.Request.IsHttps,
+                });
+            await next();
         });
 
         app.UseHealthChecks(options.HealthCheck.Path,
@@ -180,5 +194,15 @@ public class Startup
                 Predicate = check => check.IsConfigured(options)
             }
         );
+
+        app.UseEndpoints(endpoints =>
+        {
+            var baget = new BaGetterEndpointBuilder();
+
+            baget.MapEndpoints(endpoints);
+
+            // SPA fallback: serve index.html for any route not matched by API or static files
+            endpoints.MapFallbackToFile("index.html");
+        });
     }
 }

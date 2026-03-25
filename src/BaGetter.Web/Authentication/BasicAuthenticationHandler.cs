@@ -77,7 +77,16 @@ public class BasicAuthenticationHandler : AuthenticationHandler<BasicAuthenticat
     protected override Task HandleChallengeAsync(AuthenticationProperties properties)
     {
         Response.StatusCode = 401;
-        Response.Headers.WWWAuthenticate = "Basic realm=\"BaGetter\", charset=\"UTF-8\"";
+
+        // Only send WWW-Authenticate: Basic for NuGet protocol requests (not browser/SPA).
+        // The header triggers a browser popup dialog which is not useful for the React UI.
+        var hasAuthHeader = Request.Headers.ContainsKey(HeaderNames.Authorization);
+        var hasApiKeyHeader = Request.Headers.ContainsKey("X-NuGet-ApiKey");
+        if (hasAuthHeader || hasApiKeyHeader)
+        {
+            Response.Headers.WWWAuthenticate = "Basic realm=\"BaGetter\", charset=\"UTF-8\"";
+        }
+
         return Task.CompletedTask;
     }
 }

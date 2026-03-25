@@ -2,7 +2,7 @@ using System;
 
 namespace BaGetter.Web.Helper;
 
-internal class ApplicationVersion
+public class ApplicationVersion
 {
     public static readonly ApplicationVersion Empty = new();
 

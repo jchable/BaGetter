@@ -43,7 +43,7 @@ internal static class IServiceCollectionExtensions
             opts.SlidingExpiration = true;
             opts.Cookie.SameSite = SameSiteMode.Strict;
             opts.Cookie.HttpOnly = true;
-            opts.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            opts.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 
             // API requests should get 401/403, not a redirect to login
             opts.Events.OnRedirectToLogin = context =>

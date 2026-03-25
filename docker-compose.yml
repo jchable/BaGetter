@@ -63,7 +63,7 @@ services:
       Storage__AccessKey: ${MINIO_ROOT_USER}
       Storage__SecretKey: ${MINIO_ROOT_PASSWORD}
       Search__Type: "Database"
-      Statistics__EnableStatisticsPage: "false"
+      Statistics__EnableStatisticsPage: "true"
       Statistics__ListConfiguredServices: "false"
     depends_on:
       postgres:
