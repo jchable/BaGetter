@@ -65,7 +65,7 @@ services:
     ports: []   # Remove host port binding — Caddy reaches bagetter via Docker network
     environment:
       ASPNETCORE_URLS: "http://+:8080"
-      TrustedProxies__0: "172.28.0.0/16"
+      TrustedProxies__0: "172.29.0.0/16"
       AllowedCorsOrigins__0: "https://packages.dev.coderise.fr"
     deploy:
       resources:
@@ -87,4 +87,4 @@ networks:
   default:
     ipam:
       config:
-        - subnet: 172.28.0.0/16
+        - subnet: 172.29.0.0/16

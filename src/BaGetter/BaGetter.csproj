@@ -26,4 +26,17 @@
     <ProjectReference Include="..\BaGetter.Protocol\BaGetter.Protocol.csproj" />
   </ItemGroup>
 
+  <!-- Build React SPA for Release -->
+  <Target Name="SpaNpmInstall" BeforeTargets="Build" Condition="'$(Configuration)' == 'Release' And '$(SpaSkipBuild)' != 'true' And !Exists('..\BaGetter.UI\node_modules')">
+    <Exec Command="npm ci" WorkingDirectory="..\BaGetter.UI" />
+  </Target>
+
+  <Target Name="SpaBuild" BeforeTargets="Build" Condition="'$(Configuration)' == 'Release' And '$(SpaSkipBuild)' != 'true'" DependsOnTargets="SpaNpmInstall">
+    <Exec Command="npm run build" WorkingDirectory="..\BaGetter.UI" />
+    <ItemGroup>
+      <SpaDistFiles Include="..\BaGetter.UI\dist\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(SpaDistFiles)" DestinationFolder="wwwroot\%(RecursiveDir)" SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>

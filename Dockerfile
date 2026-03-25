@@ -10,6 +10,14 @@ COPY ./Directory.Packages.props ./nuget.config ./src/**/*.csproj ./
 RUN for file in $(ls *.csproj); do mkdir -p ${file%.*}/ && mv $file ${file%.*}/; done
 RUN dotnet restore BaGetter/BaGetter.csproj --arch $TARGETARCH
 
+## Build React SPA
+FROM --platform=$BUILDPLATFORM node:22-alpine AS spa
+WORKDIR /app
+COPY src/BaGetter.UI/package.json src/BaGetter.UI/package-lock.json ./
+RUN npm ci
+COPY src/BaGetter.UI/ .
+RUN npm run build
+
 ## Build documentation with DocFX
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS docs
 WORKDIR /docs
@@ -27,6 +35,7 @@ RUN dotnet publish BaGetter \
     --output /app \
     --no-restore \
     -p Version=${Version} \
+    -p SpaSkipBuild=true \
     -p DebugType=none \
     -p DebugSymbols=false \
     -p GenerateDocumentationFile=false \
@@ -55,6 +64,7 @@ RUN mkdir -p /data/packages /data/symbols /data/db \
 
 WORKDIR /app
 COPY --from=publish /app .
+COPY --from=spa /app/dist ./wwwroot/
 COPY --from=docs /docs/_site ./wwwroot/docs/
 RUN chown -R bagetter:bagetter /app
 
