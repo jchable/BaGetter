@@ -22,14 +22,14 @@ export function OAuthButtons({ returnUrl = "/" }: OAuthButtonsProps) {
   if (!providers || providers.length === 0) return null;
 
   return (
-    <div className="space-y-2">
-      <div className="relative my-4">
+    <div className="mt-6 space-y-3">
+      <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t border-[var(--border)]" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-[var(--bg-card)] px-2 text-[var(--fg-muted)]">
-            Or continue with
+          <span className="bg-[var(--bg-card)] px-3 tracking-wider text-[var(--fg-muted)]">
+            or
           </span>
         </div>
       </div>
@@ -40,9 +40,9 @@ export function OAuthButtons({ returnUrl = "/" }: OAuthButtonsProps) {
           href={`/api/ui/account/external-login?provider=${encodeURIComponent(provider.name)}&returnUrl=${encodeURIComponent(returnUrl)}`}
           className="block"
         >
-          <Button variant="outline" className="w-full gap-2">
+          <Button variant="outline" className="h-10 w-full gap-2 text-sm">
             <ExternalLink size={16} />
-            {provider.displayName}
+            Continue with {provider.displayName}
           </Button>
         </a>
       ))}
