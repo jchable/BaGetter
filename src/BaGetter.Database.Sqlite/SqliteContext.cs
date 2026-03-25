@@ -23,6 +23,13 @@ public class SqliteContext : AbstractContext<SqliteContext>
         _bagetterOptions = bagetterOptions.Value.Database;
     }
 
+    /// <summary>Design-time constructor for EF migrations tooling.</summary>
+    public SqliteContext(DbContextOptions<SqliteContext> efOptions)
+        : base(efOptions)
+    {
+        _bagetterOptions = new DatabaseOptions();
+    }
+
     public override bool IsUniqueConstraintViolationException(DbUpdateException exception)
     {
         return exception.InnerException is SqliteException sqliteException &&

@@ -1,11 +1,12 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BaGetter.Core;
 
-public abstract class AbstractContext<TContext> : DbContext, IContext where TContext : DbContext
+public abstract class AbstractContext<TContext> : IdentityDbContext<BaGetterUser, BaGetterRole, string>, IContext where TContext : DbContext
 {
     public const int DefaultMaxStringLength = 4000;
 
@@ -25,6 +26,8 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
         : base(efOptions)
     { }
 
+    public DbSet<UserInvitation> UserInvitations { get; set; }
+
     public DbSet<Package> Packages { get; set; }
     public DbSet<PackageDependency> PackageDependencies { get; set; }
     public DbSet<PackageType> PackageTypes { get; set; }
@@ -41,10 +44,13 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
+        base.OnModelCreating(builder);
+
         builder.Entity<Package>(BuildPackageEntity);
         builder.Entity<PackageDependency>(BuildPackageDependencyEntity);
         builder.Entity<PackageType>(BuildPackageTypeEntity);
         builder.Entity<TargetFramework>(BuildTargetFrameworkEntity);
+        builder.Entity<UserInvitation>(BuildUserInvitationEntity);
     }
 
     private void BuildPackageEntity(EntityTypeBuilder<Package> package)
@@ -156,5 +162,22 @@ public abstract class AbstractContext<TContext> : DbContext, IContext where TCon
         targetFramework.HasIndex(f => f.Moniker);
 
         targetFramework.Property(f => f.Moniker).HasMaxLength(MaxTargetFrameworkLength);
+    }
+
+    private static void BuildUserInvitationEntity(EntityTypeBuilder<UserInvitation> invitation)
+    {
+        invitation.HasKey(i => i.Id);
+        invitation.HasIndex(i => i.Token).IsUnique();
+        invitation.HasIndex(i => i.Email);
+
+        invitation.Property(i => i.Email).HasMaxLength(256).IsRequired();
+        invitation.Property(i => i.Role).HasMaxLength(64).IsRequired();
+        invitation.Property(i => i.Token).HasMaxLength(512).IsRequired();
+        invitation.Property(i => i.InvitedById).HasMaxLength(450).IsRequired();
+
+        invitation.HasOne(i => i.InvitedBy)
+            .WithMany()
+            .HasForeignKey(i => i.InvitedById)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

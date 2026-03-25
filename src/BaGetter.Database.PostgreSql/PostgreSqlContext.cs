@@ -23,6 +23,13 @@ public class PostgreSqlContext : AbstractContext<PostgreSqlContext>
         _bagetterOptions = bagetterOptions.Value.Database;
     }
 
+    /// <summary>Design-time constructor for EF migrations tooling.</summary>
+    public PostgreSqlContext(DbContextOptions<PostgreSqlContext> efOptions)
+        : base(efOptions)
+    {
+        _bagetterOptions = new DatabaseOptions();
+    }
+
     public override bool IsUniqueConstraintViolationException(DbUpdateException exception)
     {
         return exception.InnerException is PostgresException postgresException &&

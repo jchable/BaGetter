@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -75,6 +76,11 @@ public static partial class DependencyInjectionExtensions
         services.TryAddTransient<IPackageDatabase>(provider => provider.GetRequiredService<PackageDatabase>());
 
         services.AddDbContext<TContext>();
+
+        // Register Identity EF stores for the concrete DbContext type.
+        // This wires IUserStore<BaGetterUser>, IRoleStore<BaGetterRole>, etc.
+        new IdentityBuilder(typeof(BaGetterUser), typeof(BaGetterRole), services)
+            .AddEntityFrameworkStores<TContext>();
 
         services.AddProvider<IContext>((provider, config) =>
         {

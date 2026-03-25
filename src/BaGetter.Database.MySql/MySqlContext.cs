@@ -19,6 +19,12 @@ public class MySqlContext : AbstractContext<MySqlContext>
         _bagetterOptions = bagetterOptions.Value.Database;
     }
 
+    /// <summary>Design-time constructor for EF migrations tooling.</summary>
+    public MySqlContext(DbContextOptions<MySqlContext> efOptions) : base(efOptions)
+    {
+        _bagetterOptions = new DatabaseOptions();
+    }
+
     public override bool IsUniqueConstraintViolationException(DbUpdateException exception)
     {
         return exception.InnerException is MySqlException mysqlException &&
