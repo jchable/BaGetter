@@ -37,7 +37,10 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
 
         var valid = await _apiKeyService.IsValidAsync(apiKey, Context.RequestAborted);
         if (!valid)
+        {
+            Logger.LogWarning("Invalid API key attempt from {RemoteIP}", Context.Connection?.RemoteIpAddress);
             return AuthenticateResult.Fail("Invalid API key");
+        }
 
         var claims = new[] { new Claim(ClaimTypes.Name, "apikey"), new Claim(ClaimTypes.Role, Roles.Publisher) };
         var identity = new ClaimsIdentity(claims, Scheme.Name);

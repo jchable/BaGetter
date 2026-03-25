@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using BaGetter.Core;
 using Microsoft.AspNetCore.Identity;
@@ -54,14 +56,12 @@ public class RegisterModel : PageModel
         if (string.IsNullOrWhiteSpace(token))
             return RedirectToPage("/Account/Login");
 
+        var tokenHash = HashToken(token);
         var invitation = await _db.UserInvitations
-            .FirstOrDefaultAsync(i => i.Token == token && i.AcceptedAt == null);
+            .FirstOrDefaultAsync(i => i.Token == tokenHash && i.AcceptedAt == null);
 
         if (invitation == null || invitation.ExpiresAt < System.DateTimeOffset.UtcNow)
-        {
-            ModelState.AddModelError(string.Empty, "This invitation link is invalid or has expired.");
-            return Page();
-        }
+            return RedirectToPage("/Account/Login");
 
         Token = token;
         Input.Email = invitation.Email;
@@ -73,8 +73,9 @@ public class RegisterModel : PageModel
         if (!ModelState.IsValid)
             return Page();
 
+        var tokenHash = HashToken(Token);
         var invitation = await _db.UserInvitations
-            .FirstOrDefaultAsync(i => i.Token == Token && i.AcceptedAt == null);
+            .FirstOrDefaultAsync(i => i.Token == tokenHash && i.AcceptedAt == null);
 
         if (invitation == null || invitation.ExpiresAt < System.DateTimeOffset.UtcNow)
         {
@@ -105,5 +106,11 @@ public class RegisterModel : PageModel
 
         await _signInManager.SignInAsync(user, isPersistent: false);
         return LocalRedirect(Url.Content("~/"));
+    }
+
+    private static string HashToken(string rawToken)
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(rawToken));
+        return Convert.ToBase64String(hash);
     }
 }

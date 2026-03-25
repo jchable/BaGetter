@@ -51,7 +51,7 @@ public class PackagePublishController : Controller
     {
         if (_options.Value.IsReadOnlyMode)
         {
-            HttpContext.Response.StatusCode = 401;
+            HttpContext.Response.StatusCode = 403;
             return;
         }
 
@@ -77,6 +77,8 @@ public class PackagePublishController : Controller
                     break;
 
                 case PackageIndexingResult.Success:
+                    _logger.LogInformation("Package uploaded by {User} from {RemoteIP}",
+                        User.Identity?.Name ?? "unknown", HttpContext.Connection.RemoteIpAddress);
                     HttpContext.Response.StatusCode = 201;
                     break;
             }
@@ -92,13 +94,17 @@ public class PackagePublishController : Controller
     public async Task<IActionResult> Delete(string id, string version, CancellationToken cancellationToken)
     {
         if (_options.Value.IsReadOnlyMode)
-            return Unauthorized();
+            return StatusCode(403);
 
         if (!NuGetVersion.TryParse(version, out var nugetVersion))
             return NotFound();
 
         if (await _deleteService.TryDeletePackageAsync(id, nugetVersion, cancellationToken))
+        {
+            _logger.LogInformation("Package {PackageId} {PackageVersion} deleted by {User} from {RemoteIP}",
+                id, nugetVersion, User.Identity?.Name ?? "unknown", HttpContext.Connection.RemoteIpAddress);
             return NoContent();
+        }
 
         return NotFound();
     }
@@ -107,13 +113,17 @@ public class PackagePublishController : Controller
     public async Task<IActionResult> Relist(string id, string version, CancellationToken cancellationToken)
     {
         if (_options.Value.IsReadOnlyMode)
-            return Unauthorized();
+            return StatusCode(403);
 
         if (!NuGetVersion.TryParse(version, out var nugetVersion))
             return NotFound();
 
         if (await _packages.RelistPackageAsync(id, nugetVersion, cancellationToken))
+        {
+            _logger.LogInformation("Package {PackageId} {PackageVersion} relisted by {User} from {RemoteIP}",
+                id, nugetVersion, User.Identity?.Name ?? "unknown", HttpContext.Connection.RemoteIpAddress);
             return Ok();
+        }
 
         return NotFound();
     }
@@ -122,7 +132,7 @@ public class PackagePublishController : Controller
     public async Task<IActionResult> Deprecate(string id, string version, [FromBody] DeprecatePackageRequest request, CancellationToken cancellationToken)
     {
         if (_options.Value.IsReadOnlyMode)
-            return Unauthorized();
+            return StatusCode(403);
 
         if (!NuGetVersion.TryParse(version, out var nugetVersion))
             return NotFound();
@@ -150,9 +160,11 @@ public class PackagePublishController : Controller
         catch (Exception e)
         {
             _logger.LogError(e, "Failed to deprecate package {PackageId} {PackageVersion}", id, nugetVersion);
-            return BadRequest(e.Message);
+            return BadRequest("Failed to deprecate package.");
         }
 
+        _logger.LogInformation("Package {PackageId} {PackageVersion} deprecated by {User} from {RemoteIP}",
+            id, nugetVersion, User.Identity?.Name ?? "unknown", HttpContext.Connection.RemoteIpAddress);
         return Ok();
     }
 }

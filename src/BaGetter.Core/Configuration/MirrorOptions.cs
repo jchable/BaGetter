@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Net;
 
 namespace BaGetter.Core;
 
@@ -41,6 +42,12 @@ public class MirrorOptions : IValidatableObject
         {
             yield return new ValidationResult(
                 $"The {nameof(PackageSource)} configuration is required if mirroring is enabled",
+                [nameof(PackageSource)]);
+        }
+        else if (IsPrivateOrLoopbackUri(PackageSource))
+        {
+            yield return new ValidationResult(
+                $"The {nameof(PackageSource)} must not point to a loopback or private network address",
                 [nameof(PackageSource)]);
         }
 
@@ -99,5 +106,32 @@ public class MirrorOptions : IValidatableObject
                     break;
             }
         }
+    }
+
+    private static bool IsPrivateOrLoopbackUri(Uri uri)
+    {
+        if (!uri.IsAbsoluteUri)
+            return false;
+
+        var host = uri.Host;
+        if (string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (!IPAddress.TryParse(host, out var ip))
+            return false;
+
+        if (IPAddress.IsLoopback(ip))
+            return true;
+
+        // RFC 1918 / RFC 4193 private ranges
+        var bytes = ip.GetAddressBytes();
+        return bytes.Length == 4 && bytes[0] switch
+        {
+            10 => true,                                         // 10.0.0.0/8
+            172 => bytes[1] >= 16 && bytes[1] <= 31,            // 172.16.0.0/12
+            192 => bytes[1] == 168,                             // 192.168.0.0/16
+            169 => bytes[1] == 254,                             // 169.254.0.0/16 (link-local)
+            _ => false
+        };
     }
 }

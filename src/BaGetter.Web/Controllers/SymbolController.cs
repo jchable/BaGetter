@@ -39,7 +39,7 @@ public class SymbolController : Controller
     {
         if (_options.Value.IsReadOnlyMode)
         {
-            HttpContext.Response.StatusCode = 401;
+            HttpContext.Response.StatusCode = 403;
             return;
         }
 
@@ -65,6 +65,8 @@ public class SymbolController : Controller
                     break;
 
                 case SymbolIndexingResult.Success:
+                    _logger.LogInformation("Symbol package uploaded by {User} from {RemoteIP}",
+                        User.Identity?.Name ?? "unknown", HttpContext.Connection.RemoteIpAddress);
                     HttpContext.Response.StatusCode = 201;
                     break;
             }
