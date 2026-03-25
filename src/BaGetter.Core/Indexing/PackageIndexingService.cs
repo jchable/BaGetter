@@ -70,8 +70,7 @@ public class PackageIndexingService : IPackageIndexingService
             using var packageReader = new PackageArchiveReader(packageStream, leaveStreamOpen: true);
             package = packageReader.GetPackageMetadata();
             package.Published = _time.UtcNow;
-            package.TenantId = _tenantProvider.GetCurrentTenantId()
-                ?? throw new InvalidOperationException("No tenant context for package indexing.");
+            package.TenantId = _tenantProvider.GetCurrentTenantId() ?? "default";
 
             // Validate package entries to prevent zip-slip and malformed archives
             await packageReader.ValidatePackageEntriesAsync(cancellationToken);

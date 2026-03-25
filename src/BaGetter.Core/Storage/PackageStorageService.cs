@@ -222,10 +222,8 @@ public class PackageStorageService : IPackageStorageService
 
     private string TenantPrefix()
     {
-        var tenantId = _tenantProvider.GetCurrentTenantId();
-        return tenantId != null
-            ? Path.Combine(tenantId, PackagesPathPrefix)
-            : PackagesPathPrefix;
+        var tenantId = _tenantProvider.GetCurrentTenantId() ?? "default";
+        return Path.Combine(tenantId, PackagesPathPrefix);
     }
 
     private string PackagePath(string lowercasedId, string lowercasedNormalizedVersion)
