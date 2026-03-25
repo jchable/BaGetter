@@ -12,6 +12,8 @@ interface PackageIconProps {
 export function PackageIcon({ url, alt, size = 48, className }: PackageIconProps) {
   const [failed, setFailed] = useState(false);
 
+  const containerStyle = { width: size, height: size, minWidth: size, minHeight: size };
+
   if (!url || failed) {
     return (
       <div
@@ -19,7 +21,7 @@ export function PackageIcon({ url, alt, size = 48, className }: PackageIconProps
           "flex items-center justify-center rounded-md bg-[var(--bg-muted)]",
           className,
         )}
-        style={{ width: size, height: size }}
+        style={containerStyle}
       >
         <Package size={size * 0.5} className="text-[var(--fg-muted)]" />
       </div>
@@ -27,14 +29,16 @@ export function PackageIcon({ url, alt, size = 48, className }: PackageIconProps
   }
 
   return (
-    <img
-      src={url}
-      alt={alt}
-      width={size}
-      height={size}
-      className={cn("rounded-md object-contain", className)}
-      style={{ width: size, height: size }}
-      onError={() => setFailed(true)}
-    />
+    <div
+      className={cn("flex items-center justify-center overflow-hidden rounded-md", className)}
+      style={containerStyle}
+    >
+      <img
+        src={url}
+        alt={alt}
+        className="h-full w-full object-contain"
+        onError={() => setFailed(true)}
+      />
+    </div>
   );
 }
